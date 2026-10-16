@@ -1,0 +1,24 @@
+{
+  "settings": {
+    "size": {
+      "label": "Width (px)",
+      "description": "Widget width; the height follows from the width and the font size."
+    },
+    "interval": {
+      "label": "Redraw every (seconds)",
+      "description": "Mercury, the fastest, moves about 1 px every 10 minutes."
+    },
+    "font": {
+      "label": "Font",
+      "description": "Font family for labels and titles, e.g. \"Noto Sans\" or \"Inter\" (list them with: fc-list : family)."
+    },
+    "table_font": {
+      "label": "Table font",
+      "description": "Font family for the table; a monospaced font keeps the columns tidy (e.g. \"JetBrains Mono\")."
+    },
+    "font_size": {
+      "label": "Font size",
+      "description": "Size of the body text in px; headings scale along."
+    }
+  }
+}

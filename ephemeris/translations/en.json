@@ -1,0 +1,24 @@
+{
+  "settings": {
+    "size": {
+      "label": "Width (px)",
+      "description": "Widget width; the height follows the content."
+    },
+    "interval": {
+      "label": "Update every (seconds)",
+      "description": "How often positions are recalculated."
+    },
+    "primary": {
+      "label": "Primary ayanamsa",
+      "description": "\"Fagan/Bradley\" or \"Lahiri\": used for dignities and the highlights. Both are always shown in the table; nakshatras always use Lahiri."
+    },
+    "font": {
+      "label": "Font",
+      "description": "Font family for the text; a monospaced font keeps the columns tidy (list them with: fc-list : family)."
+    },
+    "font_size": {
+      "label": "Font size",
+      "description": "Size of the body text in px; the table shrinks if it would not fit."
+    }
+  }
+}

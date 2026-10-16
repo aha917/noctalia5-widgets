@@ -1,0 +1,59 @@
+# Orrery: the solar system right now (planets, Moon, Chiron, galactic center) over the zodiac, as a desktop widget.
+# render.py (Swiss Ephemeris + pycairo; system python3 or a .venv) draws a PNG that
+# desktop.luau shows; Chiron comes from ephe/seas_18.se1.
+
+id = "traditions/orrery"
+name = "Orrery"
+version = "1.2.0"
+plugin_api = 24
+author = "Traditions"
+license = "AGPL-3.0-or-later"
+dependencies = ["python3", "python-cairo", "pyswisseph"]
+tags = ["astronomy", "planets", "zodiac", "desktop"]
+icon = "planet"
+description = "The solar system right now: planets, Moon, Chiron and the galactic center over the zodiac, with positions."
+
+[[desktop_widget]]
+id = "desktop"
+entry = "desktop.luau"
+
+  [[desktop_widget.setting]]
+  key = "size"
+  type = "int"
+  label_key = "settings.size.label"
+  description_key = "settings.size.description"
+  default = 680
+  min = 200
+  max = 1400
+
+  [[desktop_widget.setting]]
+  key = "interval"
+  type = "int"
+  label_key = "settings.interval.label"
+  description_key = "settings.interval.description"
+  default = 60
+  min = 5
+  max = 600
+
+  [[desktop_widget.setting]]
+  key = "font"
+  type = "string"
+  label_key = "settings.font.label"
+  description_key = "settings.font.description"
+  default = "0xProto"
+
+  [[desktop_widget.setting]]
+  key = "table_font"
+  type = "string"
+  label_key = "settings.table_font.label"
+  description_key = "settings.table_font.description"
+  default = "0xProto"
+
+  [[desktop_widget.setting]]
+  key = "font_size"
+  type = "int"
+  label_key = "settings.font_size.label"
+  description_key = "settings.font_size.description"
+  default = 20
+  min = 8
+  max = 26
