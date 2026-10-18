@@ -72,12 +72,10 @@ The nodes have no distance (they are points, not bodies), shown as "—".
 
 The **Zodiac** setting moves only the signs, not the bodies:
 
-- **Tropical** (default) counts the signs from the spring equinox, as in
-  Western astrology.
-- **Sidereal: Fagan/Bradley** counts them from the stars, about 25° earlier,
-  so the ring rotates and the Sign column shifts. The Lon λ column stays the
-  true astronomical (tropical) longitude, so it can be compared with a
-  planetarium program such as Stellarium.
+- **Sidereal: Fagan/Bradley** counts them from the stars, about 24° earlier than the tropical. The Lon λ column stays the
+  true astronomical longitude, so it can be compared with a real-time astronomical software such as Stellarium.
+- **Tropical** counts the signs from the spring equinox, as in
+  Western astrology. Not accurate if you live in the southern hemisphere.
 
 The zodiac label in the top left corner says which one is in use.
 
