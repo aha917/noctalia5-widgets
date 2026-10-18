@@ -25,7 +25,7 @@ positions are computed locally with the Swiss Ephemeris.
 | **Moon's nodes** | ☊ north and ☋ south node (true node, geocentric) as small red diamonds on the inner edge of the ring, at their longitude |
 | **Galactic center (GC)** | the centre of the Milky Way (Sgr A\*), a black ball with a faint halo on the ring at its longitude; it is far beyond any scale, so it sits on the ring |
 | **Great Attractor (GA)** | the gravitational centre of our supercluster (Laniakea), a white glowing ball on the ring, like the GC |
-| **Zodiac label** | top left: **Tropical** or **Sidereal: Fagan/Bradley** |
+| **Zodiac label** | top left: **Sidereal: Fagan/Bradley** or **Tropical** |
 | **Date and time** | top right |
 
 Saturn, Jupiter and Pluto are drawn by the widget as vector outlines; the other
@@ -72,7 +72,7 @@ The nodes have no distance (they are points, not bodies), shown as "—".
 
 The **Zodiac** setting moves only the signs, not the bodies:
 
-- **Sidereal: Fagan/Bradley** counts them from the stars, about 24° earlier than the tropical. The Lon λ column stays the
+- **Sidereal: Fagan/Bradley** (default) counts the signs from the stars, about 24° earlier than the tropical. The Lon λ column stays the
   true astronomical longitude, so it can be compared with a real-time astronomical software such as Stellarium.
 - **Tropical** counts the signs from the spring equinox, as in
   Western astrology. Not accurate if you live in the southern hemisphere.
@@ -140,7 +140,7 @@ its own settings.
 | Font | 0xProto | labels and the date; any installed font family |
 | Table font | 0xProto | a monospaced font keeps the columns tidy |
 | Font size | 20 | 8–26; the table shrinks if it would not fit the width |
-| Zodiac | Tropical | or Sidereal (Fagan/Bradley), see above |
+| Zodiac | Sidereal (Fagan/Bradley) | or Tropical, see above |
 | Table order | Heliocentric | Mercury, Venus, Earth, Mars… by distance from the Sun; or Geocentric: Earth first, then the Moon's nodes, then Mercury, Venus, Mars… |
 | Show: galactic center | on | the GC on the ring and in the table |
 | Show: Great Attractor | on | the GA on the ring and in the table |

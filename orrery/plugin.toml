@@ -63,10 +63,10 @@ entry = "desktop.luau"
   type = "select"
   label_key = "settings.zodiac.label"
   description_key = "settings.zodiac.description"
-  default = "tropical"
+  default = "fagan-bradley"
   options = [
-    { value = "tropical", label_key = "settings.zodiac.options.tropical" },
     { value = "fagan-bradley", label_key = "settings.zodiac.options.fagan-bradley" },
+    { value = "tropical", label_key = "settings.zodiac.options.tropical" },
   ]
 
   [[desktop_widget.setting]]

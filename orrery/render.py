@@ -6,7 +6,7 @@ Noctalia desktop widget (desktop.luau).
               [zodiac label 0|1] [zodiac label size] [order heliocentric|geocentric]
               [show GC 0|1] [show GA 0|1] [show nodes 0|1]
 
-zodiac is "tropical" (default) or "fagan-bradley" (sidereal signs).
+zodiac is "fagan-bradley" (default, sidereal signs) or "tropical".
 
 Positions: Swiss Ephemeris (pyswisseph). Planets use the built-in Moshier
 theory; Chiron comes from ephe/seas_18.se1. Longitudes are heliocentric,
@@ -403,7 +403,7 @@ def main():
         MONO = sys.argv[4].strip()
     if len(sys.argv) > 5 and sys.argv[5].strip():
         TEXT_K = float(sys.argv[5]) / 14
-    sidereal = (sys.argv[6] if len(sys.argv) > 6 else "").strip().lower().startswith("fagan")
+    sidereal = not (sys.argv[6] if len(sys.argv) > 6 else "").strip().lower().startswith("trop")
     show_zodiac = (sys.argv[7] if len(sys.argv) > 7 else "1").strip() != "0"
     zodiac_px = float(sys.argv[8]) if len(sys.argv) > 8 and sys.argv[8].strip() else 20.0
     order = ORDERS["geocentric" if len(sys.argv) > 9 and sys.argv[9].strip().lower().startswith("geo")

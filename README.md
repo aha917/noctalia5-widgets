@@ -18,7 +18,7 @@ positions.
 
 - The Sun, Mercury to Pluto, the Moon and Chiron on their true orbits, at
   their true inclination, with height markers above and below the ecliptic
-- A zodiac ring, **tropical** or **sidereal (Fagan/Bradley)**, with the Sun's
+- A zodiac ring, **sidereal (Fagan/Bradley)** or **tropical**, with the Sun's
   sign highlighted and a sight line from Earth
 - The Moon's **north and south nodes**, the **galactic center** and the
   **Great Attractor** on the ring, each one can be switched off
@@ -91,7 +91,7 @@ noctalia msg plugins enable traditions/ephemeris
 4. Press **Done** to leave the editor.
 
 Every placed widget has its own settings, so you can, for example, show a
-tropical Orrery on one monitor and a sidereal one on another.
+sidereal Orrery on one monitor and a tropical one on another.
 
 ## Update
 

@@ -13,7 +13,7 @@ local interval = noctalia.getConfig("interval") or 60
 local font = noctalia.getConfig("font") or "0xProto"
 local tableFont = noctalia.getConfig("table_font") or "0xProto"
 local fontSize = noctalia.getConfig("font_size") or 20
-local zodiac = noctalia.getConfig("zodiac") or "tropical"
+local zodiac = noctalia.getConfig("zodiac") or "fagan-bradley"
 local zodiacLabel = noctalia.getConfig("zodiac_label")
 if zodiacLabel == nil then zodiacLabel = true end
 local zodiacSize = noctalia.getConfig("zodiac_font_size") or 20
