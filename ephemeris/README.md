@@ -89,7 +89,7 @@ read at the same size. The pada numbers stay as they are.
   drawn by the widget) and Noto Sans Symbols (🜨)
 - Only for Sanskrit names: **PyGObject** (Pango) and **Noto Sans Devanagari**
 
-Arch / CachyOS:
+Arch Linux (and Arch-based distributions):
 
 ```sh
 sudo pacman -S python-cairo ttf-dejavu noto-fonts

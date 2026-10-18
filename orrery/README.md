@@ -87,7 +87,7 @@ The zodiac label in the top left corner says which one is in use.
 - `python3` with **pycairo** and **pyswisseph** (Swiss Ephemeris)
 - Fonts: DejaVu Sans (sign and planet symbols) and Noto Sans Symbols (🜨)
 
-Arch / CachyOS:
+Arch Linux (and Arch-based distributions):
 
 ```sh
 sudo pacman -S python-cairo ttf-dejavu noto-fonts

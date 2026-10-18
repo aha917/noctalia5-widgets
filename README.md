@@ -50,7 +50,7 @@ Today's sidereal positions for astrologers.
 - Fonts: DejaVu Sans and Noto Sans Symbols
 - For Ephemeris's Sanskrit names only: **PyGObject** and Noto Sans Devanagari
 
-Arch / CachyOS:
+Arch Linux (and Arch-based distributions):
 
 ```sh
 sudo pacman -S python-cairo python-gobject ttf-dejavu noto-fonts
