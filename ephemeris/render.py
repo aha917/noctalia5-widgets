@@ -504,7 +504,24 @@ def main():
     loc = time.localtime(now)
     y = 16 + 14 * k
     date_s = time.strftime("%a %d %b %Y  %H:%M", loc)
-    text(cr, date_s, W - 16 - text(cr, date_s, 0, 0, px, measure=True), y, px, alpha=0.75)
+    date_w = text(cr, date_s, 0, 0, px, measure=True)
+    text(cr, date_s, W - 16 - date_w, y, px, alpha=0.75)
+
+    # ayanamsa values, small, in the top left corner beside the date
+    swe.set_sid_mode(fb_sid)
+    fb_a = swe.get_ayanamsa_ut(jd)
+    swe.set_sid_mode(la_sid)
+    la_a = swe.get_ayanamsa_ut(jd)
+
+    def deg_s(a):
+        return f"{int(a)}°{int((a - int(a)) * 60):02d}'"
+    note = [("t", f"Ayanamsa: Fagan/Bradley {deg_s(fb_a)}, Lahiri {deg_s(la_a)}. "
+                  f"Nakshatras by Lahiri; dignities and highlights by {p_name}.", (0.6, 0.64, 0.75))]
+    ny = y
+    for line in wrap(cr, note, W - 16 - date_w - 24 - 16, 11 * K):
+        runs(cr, line, 16, ny, 11 * K)
+        ny += 16 * K
+    y = max(y, ny - 16 * K)
 
     heads = ["Planet", "Fagan/Bradley", "लाहिड़ी" if sanskrit else "Lahiri", "Dignity",
              "नक्षत्र" if sanskrit else "Nakshatra"]
@@ -555,23 +572,8 @@ def main():
             runs(cr, c, xs[i], y, 14 * k)
         y += 28 * k
 
-    # ayanamsa values, small
-    swe.set_sid_mode(fb_sid)
-    fb_a = swe.get_ayanamsa_ut(jd)
-    swe.set_sid_mode(la_sid)
-    la_a = swe.get_ayanamsa_ut(jd)
-
-    def deg_s(a):
-        return f"{int(a)}°{int((a - int(a)) * 60):02d}'"
-    y += 4 * k
-    note = [("t", f"Ayanamsa: Fagan/Bradley {deg_s(fb_a)}, Lahiri {deg_s(la_a)}. "
-                  f"Nakshatras by Lahiri; dignities and highlights by {p_name}.", (0.6, 0.64, 0.75))]
-    for line in wrap(cr, note, W - 80, 11 * K):
-        runs(cr, line, 40, y, 11 * K)
-        y += 16 * K
-
     # summary
-    y += 34 * k
+    y += 20 * k
     spx = 14 * K
     for parts in notes:
         for line in wrap(cr, parts, W - 80, spx):

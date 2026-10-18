@@ -44,9 +44,9 @@ Detriment and fall are the signs opposite.
 
 ### The ayanamsa line
 
-Under the table: the current values of both ayanamsas (for example
-"Fagan/Bradley 25°06′, Lahiri 24°13′"), and which one the dignities and the
-summary use.
+In the top left corner, beside the date: the current values of both
+ayanamsas (for example "Fagan/Bradley 25°06′, Lahiri 24°13′"), and which one
+the dignities and the summary use.
 
 ### The summary
 
