@@ -3,8 +3,8 @@
 ![Orrery](preview.png)
 
 A Noctalia desktop widget showing the solar system as it is right now:
-the Sun, Mercury to Pluto, the Moon, Chiron, the Moon's nodes (☊ ☋) and the
-galactic center (GC),
+the Sun, Mercury to Pluto, the Moon, Chiron, the Moon's nodes (☊ ☋), the
+galactic center (GC) and the Great Attractor (GA),
 seen obliquely from the north, with the zodiac on the outer ring. The sign the
 Sun is in, as seen from Earth, is highlighted, with a dashed sight line from
 Earth through the Sun. The planets are labelled with their astrological
@@ -25,7 +25,9 @@ line with a dot marks how far a planet is above or below the ecliptic plane
 (see the Lat β column). The Moon is shown on a small schematic circle around
 Earth (it has no table row). The galactic center is drawn on the zodiac band
 (it is far beyond any scale); its position is the J2000 value of Sgr A*
-precessed to the date, at 8.18 kpc. The Moon's north and south nodes (true
+precessed to the date, at 8.18 kpc. The Great Attractor (GA, a white glowing ball) is drawn
+the same way, at galactic l = 307°, b = +9° (Lynden-Bell et al. 1988), about
+62 Mpc (200 million light years) away. The Moon's north and south nodes (true
 node, geocentric) are small diamonds on the inner edge of the zodiac band at
 their longitude, and have their own table rows.
 
@@ -85,8 +87,11 @@ Then open the desktop widget editor and add **Orrery** to a monitor.
 | Table font | 0xProto | the table (a monospaced font looks best)     |
 | Font size  | 20      | 8–26; the widget grows taller with it        |
 | Zodiac     | Tropical | or Sidereal (Fagan/Bradley): moves the signs on the ring and in the Sign column; Lon λ stays tropical |
-| Show zodiac label | on | "Tropical" or "Sidereal: Fagan/Bradley" in the top left corner |
-| Zodiac font size  | 20 | size of that label in px; equal to Font size it matches the date |
+| Show: galactic center | on | the GC on the band and in the table |
+| Show: Great Attractor | on | the GA on the band and in the table |
+| Show: Moon's nodes    | on | ☊ ☋ on the band and in the table |
+| Show: zodiac label    | on | "Tropical" or "Sidereal: Fagan/Bradley" in the top left corner |
+| Zodiac label size     | 20 | only shown while the label is on; equal to Font size it matches the date |
 | Table order       | Heliocentric | or Geocentric: Earth, then the Moon's nodes, then Mercury, Venus, Mars… |
 
 If the font is not installed, cairo falls back to a default font.

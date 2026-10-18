@@ -4,6 +4,7 @@ Noctalia desktop widget (desktop.luau).
 
     render.py <out.png> [scale] [font] [table font] [font size] [zodiac]
               [zodiac label 0|1] [zodiac label size] [order heliocentric|geocentric]
+              [show GC 0|1] [show GA 0|1] [show nodes 0|1]
 
 zodiac is "tropical" (default) or "fagan-bradley" (sidereal signs).
 
@@ -48,9 +49,9 @@ GLYPHS = "DejaVu Sans"          # zodiac signs: many fonts lack U+2648..2653
 TEXT_K = 1.0                    # font size setting / 14, the design size of the table text
 
 
-def canvas_height(k):
+def canvas_height(k, rows):
     """Must match desktop.luau, which sizes the widget from it."""
-    return math.floor(TABLE_Y + 395 * k)
+    return math.floor(TABLE_Y + (70 + 25 * rows) * k)
 
 #            name        swe id         mean AU  colour (r,g,b)          size  period (days)
 PLANETS = [
@@ -70,6 +71,12 @@ GC_LON, GC_LAT = 266.8517, -5.5361
 GC_AU = 8178 * 206264.806
 GC_LY = 8178 * 3.26156
 GC_SIZE = 3.5                   # drawn like Chiron
+# Great Attractor: galactic l = 307, b = +9 (Lynden-Bell et al. 1988) as ecliptic
+# J2000, at cz ~ 4350 km/s, about 62 Mpc. Drawn on the band like the GC.
+GA_LON, GA_LAT = 222.0406, -41.2807
+GA_AU = 62e6 * 206264.806
+GA_LY = 62e6 * 3.26156
+GA_COL = (1.0, 1.0, 1.0)        # a white, glowing ball
 
 # Picture labels: astrological symbols, with the font that has them (GLYPHS
 # unless named); GC keeps its name. Saturn and Jupiter are drawn outlines (drawn_symbol).
@@ -87,9 +94,9 @@ NODE_COL = (0.85, 0.45, 0.40)
 # centre) first, then the Moon's nodes in place of the Moon, then the rest.
 ORDERS = {
     "heliocentric": ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Chiron",
-                     "Uranus", "Neptune", "Pluto", "GC", "North Node", "South Node"],
+                     "Uranus", "Neptune", "Pluto", "GC", "GA", "North Node", "South Node"],
     "geocentric":   ["Earth", "North Node", "South Node", "Mercury", "Venus", "Mars", "Jupiter",
-                     "Saturn", "Chiron", "Uranus", "Neptune", "Pluto", "GC"],
+                     "Saturn", "Chiron", "Uranus", "Neptune", "Pluto", "GC", "GA"],
 }
 
 # The Moon: drawn on a small circle around Earth (its real orbit would be
@@ -375,10 +382,10 @@ def sector_path(cr, lon0, lon1, steps=24):
     cr.close_path()
 
 
-def gc_lon(jd):
-    """J2000 ecliptic longitude of the galactic center precessed to the date."""
+def precess_lon(lon, jd):
+    """J2000 ecliptic longitude of a fixed object precessed to the date."""
     t = (jd - 2451545.0) / 36525
-    return (GC_LON + (5028.796195 * t + 1.1054348 * t * t) / 3600) % 360
+    return (lon + (5028.796195 * t + 1.1054348 * t * t) / 3600) % 360
 
 
 def fmt_light(au):
@@ -401,12 +408,21 @@ def main():
     zodiac_px = float(sys.argv[8]) if len(sys.argv) > 8 and sys.argv[8].strip() else 20.0
     order = ORDERS["geocentric" if len(sys.argv) > 9 and sys.argv[9].strip().lower().startswith("geo")
                    else "heliocentric"]
+    flag = lambda i: (sys.argv[i] if len(sys.argv) > i else "1").strip() != "0"
+    hidden = set()
+    if not flag(10):
+        hidden.add("GC")
+    if not flag(11):
+        hidden.add("GA")
+    if not flag(12):
+        hidden.update(NODES)
+    order = [name for name in order if name not in hidden]
     now = float(os.environ.get("ORRERY_TIME") or time.time())
     tm = time.gmtime(now)
     jd = swe.julday(tm.tm_year, tm.tm_mon, tm.tm_mday,
                     tm.tm_hour + tm.tm_min / 60 + tm.tm_sec / 3600)
 
-    H = canvas_height(TEXT_K)
+    H = canvas_height(TEXT_K, len(order))
     surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, math.ceil(W * scale), math.ceil(H * scale))
     cr = cairo.Context(surf)
     cr.scale(scale, scale)
@@ -422,7 +438,8 @@ def main():
     pos = {}
     for name, pid, _, _, _, _ in PLANETS:
         pos[name] = helio(jd, pid)
-    pos["GC"] = (gc_lon(jd), GC_LAT, GC_AU)
+    pos["GC"] = (precess_lon(GC_LON, jd), GC_LAT, GC_AU)
+    pos["GA"] = (precess_lon(GA_LON, jd), GA_LAT, GA_AU)
     nn = swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_MOSEPH)[0][0]
     pos["North Node"], pos["South Node"] = (nn, 0.0, None), ((nn + 180) % 360, 0.0, None)
     earth_lon = pos["Earth"][0]
@@ -444,6 +461,7 @@ def main():
         edge()
         cr.set_source_rgba(0.75, 0.80, 0.95, 0.45)
         cr.stroke()
+    glyph_boxes = []                                # sign glyphs, kept clear of labels
     for k in range(12):
         x0, y0 = band(k * 30 + ayan, 0)
         x1, y1 = band(k * 30 + ayan, 1)
@@ -465,6 +483,8 @@ def main():
         ext = cr.text_extents(SIGNS[k])                 # centre the glyph vertically on the band
         text(cr, SIGNS[k], gx, gy - ext.y_bearing - ext.height / 2, ZOD_SIZE, col,
              1.0 if k == hi else 0.7, GLYPHS, align="c", k=1)
+        glyph_boxes.append((gx - ext.width / 2 - 2, gx + ext.width / 2 + 2,
+                            gy - ext.height / 2 - 2, gy + ext.height / 2 + 2))
 
     # ---- orbits (true shape and inclination, same projection as the bodies) ----
     for name, pid, au, col, _, period in PLANETS:
@@ -514,11 +534,22 @@ def main():
         bodies.append((depth, name, x, y, bx, by, col, size * BODY_X))
     # The galactic center sits on the zodiac band (it is far beyond any scale);
     # its latitude is in the table.
-    gx, gy = band(pos["GC"][0], 0.5)
-    gdepth = project(pos["GC"][0], BAND_IN)[2]
-    bodies.append((gdepth, "GC", gx, gy, gx, gy, (0.0, 0.0, 0.0), GC_SIZE * BODY_X))
+    # On a sign glyph they move toward the band's inner edge (just inside it if need be).
+    for name, col in (("GC", (0.0, 0.0, 0.0)), ("GA", GA_COL)):
+        if name in hidden:
+            continue
+        lon = pos[name][0]
+        rad = GC_SIZE * BODY_X * 1.4
+        for t in (0.5, 0.15, 0.0, -0.15, -0.3):
+            gx, gy = band(lon, t)
+            if not any(l - rad < gx < r + rad and tp - rad < gy < bt + rad
+                       for l, r, tp, bt in glyph_boxes):
+                break
+        bodies.append((project(lon, BAND_IN)[2], name, gx, gy, gx, gy, col, GC_SIZE * BODY_X))
     bodies.append((0.0, "Sun", CX, CY, CX, CY, (1.0, 0.82, 0.35), 26 * BODY_X))
     for name in NODES:
+        if name in hidden:
+            continue
         nx, ny, ndepth = project(pos[name][0], BAND_IN)
         bodies.append((ndepth, name, nx, ny, nx, ny, NODE_COL, 3.2))
     # Moon: geocentric direction, on a circle around Earth (see MOON_R).
@@ -574,6 +605,8 @@ def main():
             cr.set_source_rgba(0.95, 0.85, 0.60, 0.8); cr.set_line_width(2.2); cr.stroke()
         if name == "GC":
             black_sphere(cr, x, y, size)
+        elif name == "GA":
+            sphere(cr, x, y, size, col, glow=2.2)
         else:
             sphere(cr, x, y, size, col, glow=0.8 if name in ("Jupiter", "Uranus", "Neptune") else 0)
         if name == "Saturn":                        # ring in front of the globe
@@ -591,7 +624,7 @@ def main():
     line = SYM_SIZE * TEXT_K * 1.1
     placed = [(x - r, x + r, y - size, y + size)         # (left, right, top, bottom)
               for _, name, x, y, _, _, _, size in bodies if name != "Sun"
-              for r in [size * 2.1 if name == "Saturn" else size]]
+              for r in [size * 2.1 if name == "Saturn" else size]] + glyph_boxes
 
     def spots(bx, by, r, w):
         """Label boxes (left, baseline) around a body, nearest first."""
@@ -649,7 +682,8 @@ def main():
 
     gold, pale = (1.0, 0.75, 0.30), (0.85, 0.88, 1.0)
     rows = []
-    for name, pid, au, col, _, _ in (PLANETS + [("GC", None, GC_AU, (0.0, 0.0, 0.0), GC_SIZE, 0)]
+    for name, pid, au, col, _, _ in (PLANETS + [("GC", None, GC_AU, (0.0, 0.0, 0.0), GC_SIZE, 0),
+                                                ("GA", None, GA_AU, GA_COL, GC_SIZE, 0)]
                                      + [(n, None, None, NODE_COL, 0, 0) for n in NODES]):
         lon, lat, r = pos[name]
         slon = (lon - ayan) % 360
@@ -661,12 +695,14 @@ def main():
             dist_s, light_s = "—", "—"
         elif name == "GC":
             dist_s, light_s = f"{GC_AU:.2e}".replace("e+0", "e"), f"{GC_LY / 1000:.1f}k y"
+        elif name == "GA":
+            dist_s, light_s = f"{GA_AU:.2e}".replace("e+", "e"), f"{GA_LY / 1e6:.0f}M y"
         else:
             dist = geo_distance(jd, pid)
             dist_s, light_s = f"{dist:.3f}", fmt_light(dist)
         rows.append((name, col, [name, f"{lon:.2f}°", f"{lat:+.2f}°", SIGNS[sign] + f"{d:2d}°{m:02d}'",
-                                 dist_s if name == "GC" or r is None else f"{r:.3f}", dist_s, light_s]))
-    rows.sort(key=lambda row: order.index(row[0]))
+                                 dist_s if name in ("GC", "GA") or r is None else f"{r:.3f}", dist_s, light_s]))
+    rows = sorted((row for row in rows if row[0] in order), key=lambda row: order.index(row[0]))
     heads = ["Planet", "Lon λ", "Lat β", "Sign", "Sun AU", "Earth AU", "Light"]
     right = [False, True, True, False, True, True, True]
 
@@ -713,6 +749,8 @@ def main():
         x0, _ = xs[0]
         if name == "GC":
             black_sphere(cr, x0 + 8 * k, rowy - 5 * k, 4.5 * k)
+        elif name == "GA":
+            sphere(cr, x0 + 8 * k, rowy - 5 * k, 4.5 * k, GA_COL, glow=1.2)
         else:
             cr.set_source_rgba(*col, 0.95)
             cr.arc(x0 + 8 * k, rowy - 5 * k, 4.5 * k, 0, 2 * math.pi)

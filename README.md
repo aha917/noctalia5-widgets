@@ -4,7 +4,7 @@ Astronomy and astrology desktop widgets for [Noctalia](https://github.com/noctal
 
 | Widget | What it shows |
 |--------|---------------|
-| [Orrery](orrery/) | The solar system right now: planets, Moon, Chiron, the Moon's nodes and the galactic center over a tropical or sidereal (Fagan/Bradley) zodiac, with a table of positions. |
+| [Orrery](orrery/) | The solar system right now: planets, Moon, Chiron, the Moon's nodes, the galactic center and the Great Attractor over a tropical or sidereal (Fagan/Bradley) zodiac, with a table of positions. |
 | [Ephemeris](ephemeris/) | Sidereal positions (Fagan/Bradley and Lahiri) with retrograde and stationary planets, dignities, nakshatras (optionally in Sanskrit) and a short summary of the highlights. |
 
 <p>

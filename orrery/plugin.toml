@@ -4,14 +4,14 @@
 
 id = "traditions/orrery"
 name = "Orrery"
-version = "1.3.0"
+version = "1.4.0"
 plugin_api = 24
 author = "Traditions"
 license = "AGPL-3.0-or-later"
 dependencies = ["python3", "python-cairo", "pyswisseph"]
 tags = ["astronomy", "planets", "zodiac", "desktop"]
 icon = "planet"
-description = "The solar system right now: planets, Moon, Chiron, lunar nodes and the galactic center over a tropical or sidereal zodiac, with positions."
+description = "The solar system right now: planets, Moon, Chiron, lunar nodes, the galactic center and the Great Attractor over a tropical or sidereal zodiac, with positions."
 
 [[desktop_widget]]
 id = "desktop"
@@ -70,6 +70,38 @@ entry = "desktop.luau"
   ]
 
   [[desktop_widget.setting]]
+  key = "order"
+  type = "select"
+  label_key = "settings.order.label"
+  description_key = "settings.order.description"
+  default = "heliocentric"
+  options = [
+    { value = "heliocentric", label_key = "settings.order.options.heliocentric" },
+    { value = "geocentric", label_key = "settings.order.options.geocentric" },
+  ]
+
+  [[desktop_widget.setting]]
+  key = "show_gc"
+  type = "bool"
+  label_key = "settings.show_gc.label"
+  description_key = "settings.show_gc.description"
+  default = true
+
+  [[desktop_widget.setting]]
+  key = "show_ga"
+  type = "bool"
+  label_key = "settings.show_ga.label"
+  description_key = "settings.show_ga.description"
+  default = true
+
+  [[desktop_widget.setting]]
+  key = "show_nodes"
+  type = "bool"
+  label_key = "settings.show_nodes.label"
+  description_key = "settings.show_nodes.description"
+  default = true
+
+  [[desktop_widget.setting]]
   key = "zodiac_label"
   type = "bool"
   label_key = "settings.zodiac_label.label"
@@ -84,14 +116,4 @@ entry = "desktop.luau"
   default = 20
   min = 6
   max = 40
-
-  [[desktop_widget.setting]]
-  key = "order"
-  type = "select"
-  label_key = "settings.order.label"
-  description_key = "settings.order.description"
-  default = "heliocentric"
-  options = [
-    { value = "heliocentric", label_key = "settings.order.options.heliocentric" },
-    { value = "geocentric", label_key = "settings.order.options.geocentric" },
-  ]
+  visible_when = { key = "zodiac_label", values = ["true"] }

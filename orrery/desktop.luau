@@ -18,8 +18,14 @@ local zodiacLabel = noctalia.getConfig("zodiac_label")
 if zodiacLabel == nil then zodiacLabel = true end
 local zodiacSize = noctalia.getConfig("zodiac_font_size") or 20
 local order = noctalia.getConfig("order") or "heliocentric"
--- same formula as canvas_height() in render.py
-local H = math.floor(470 + 395 * fontSize / 14)
+local function on(key)                      -- bool settings that default to true
+  local v = noctalia.getConfig(key)
+  return v == nil or v == true
+end
+local showGC, showGA, showNodes = on("show_gc"), on("show_ga"), on("show_nodes")
+-- same formula as canvas_height() in render.py: 10 planet rows plus the optional ones
+local rows = 10 + (showGC and 1 or 0) + (showGA and 1 or 0) + (showNodes and 2 or 0)
+local H = math.floor(470 + (70 + 25 * rows) * fontSize / 14)
 
 local dir = noctalia.pluginDir()
 -- A .venv inside the plugin wins (pip-installed pyswisseph); otherwise the
@@ -66,7 +72,8 @@ local function redraw()
   -- Render at twice the displayed size so it stays sharp on scaled outputs.
   local scale = string.format("%.3f", 2 * size / W)
   noctalia.runAsync({ python, "-I", dir .. "/render.py", out, scale, font, tableFont, tostring(fontSize), zodiac,
-    zodiacLabel and "1" or "0", tostring(zodiacSize), order }, function(result)
+    zodiacLabel and "1" or "0", tostring(zodiacSize), order,
+    showGC and "1" or "0", showGA and "1" or "0", showNodes and "1" or "0" }, function(result)
     busy = false
     if result.exitCode == 0 then
       shown = out

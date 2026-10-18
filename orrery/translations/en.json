@@ -28,14 +28,6 @@
         "fagan-bradley": "Sidereal (Fagan/Bradley)"
       }
     },
-    "zodiac_label": {
-      "label": "Show zodiac label",
-      "description": "Show \"Tropical\" or \"Sidereal: Fagan/Bradley\" in the top left corner."
-    },
-    "zodiac_font_size": {
-      "label": "Zodiac font size",
-      "description": "Size of the zodiac label in px, like Font size: the same number as Font size matches the date."
-    },
     "order": {
       "label": "Table order",
       "description": "Heliocentric: Mercury, Venus, Earth, Mars… by distance from the Sun. Geocentric: Earth first, then the Moon's nodes, then Mercury, Venus, Mars…",
@@ -43,6 +35,26 @@
         "heliocentric": "Heliocentric",
         "geocentric": "Geocentric"
       }
+    },
+    "show_gc": {
+      "label": "Show: galactic center",
+      "description": "The galactic center (GC) on the zodiac band and in the table."
+    },
+    "show_ga": {
+      "label": "Show: Great Attractor",
+      "description": "The Great Attractor (GA) on the zodiac band and in the table."
+    },
+    "show_nodes": {
+      "label": "Show: Moon's nodes",
+      "description": "The Moon's north and south nodes on the zodiac band and in the table."
+    },
+    "zodiac_label": {
+      "label": "Show: zodiac label",
+      "description": "Show \"Tropical\" or \"Sidereal: Fagan/Bradley\" in the top left corner."
+    },
+    "zodiac_font_size": {
+      "label": "Zodiac label size",
+      "description": "Size of the zodiac label in px, like Font size: the same number as Font size matches the date."
     }
   }
 }
