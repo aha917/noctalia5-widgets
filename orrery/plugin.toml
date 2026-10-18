@@ -4,14 +4,14 @@
 
 id = "traditions/orrery"
 name = "Orrery"
-version = "1.2.0"
+version = "1.3.0"
 plugin_api = 24
 author = "Traditions"
 license = "AGPL-3.0-or-later"
 dependencies = ["python3", "python-cairo", "pyswisseph"]
 tags = ["astronomy", "planets", "zodiac", "desktop"]
 icon = "planet"
-description = "The solar system right now: planets, Moon, Chiron and the galactic center over the zodiac, with positions."
+description = "The solar system right now: planets, Moon, Chiron, lunar nodes and the galactic center over a tropical or sidereal zodiac, with positions."
 
 [[desktop_widget]]
 id = "desktop"
@@ -57,3 +57,41 @@ entry = "desktop.luau"
   default = 20
   min = 8
   max = 26
+
+  [[desktop_widget.setting]]
+  key = "zodiac"
+  type = "select"
+  label_key = "settings.zodiac.label"
+  description_key = "settings.zodiac.description"
+  default = "tropical"
+  options = [
+    { value = "tropical", label_key = "settings.zodiac.options.tropical" },
+    { value = "fagan-bradley", label_key = "settings.zodiac.options.fagan-bradley" },
+  ]
+
+  [[desktop_widget.setting]]
+  key = "zodiac_label"
+  type = "bool"
+  label_key = "settings.zodiac_label.label"
+  description_key = "settings.zodiac_label.description"
+  default = true
+
+  [[desktop_widget.setting]]
+  key = "zodiac_font_size"
+  type = "int"
+  label_key = "settings.zodiac_font_size.label"
+  description_key = "settings.zodiac_font_size.description"
+  default = 20
+  min = 6
+  max = 40
+
+  [[desktop_widget.setting]]
+  key = "order"
+  type = "select"
+  label_key = "settings.order.label"
+  description_key = "settings.order.description"
+  default = "heliocentric"
+  options = [
+    { value = "heliocentric", label_key = "settings.order.options.heliocentric" },
+    { value = "geocentric", label_key = "settings.order.options.geocentric" },
+  ]

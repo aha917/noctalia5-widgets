@@ -9,7 +9,7 @@ the widget as vector outlines):
 
 | Column        | Meaning                                                          |
 |---------------|------------------------------------------------------------------|
-| Planet        | ☉ ☽ ☿ ♀ ♂ ♃ ♄ ♅ ♆ ⯓                                              |
+| Planet        | ☉ ☿ ♀ 🜨 ☽ ♂ ♃ ♄ ♅ ♆ ⯓ or 🜨 ☽ ☿ ♀ ☉ ♂ ♃ ♄ ♅ ♆ ⯓ (Planet order setting; 🜨 Earth = opposite the Sun, as seen from the Sun) |
 | Fagan/Bradley | sign and degree with the Fagan/Bradley ayanamsa, plus motion     |
 | Lahiri        | sign and degree with the Lahiri ayanamsa, plus motion            |
 | Dignity       | own sign, exalted, detriment or fall                             |
@@ -30,13 +30,15 @@ Neptune and Pluto rule Aquarius, Pisces and Scorpio and have no exaltation.
 ## Requirements
 
 - Noctalia v5 (plugin API 24)
-- `python3` with **pycairo** and **pyswisseph**
-- Font: DejaVu Sans (symbols; Saturn, Jupiter and Pluto are drawn by the widget)
+- `python3` with **pycairo**, **pyswisseph** and, for Sanskrit names, **PyGObject** (Pango)
+- Font: DejaVu Sans (symbols; Saturn, Jupiter and Pluto are drawn by the widget);
+  Noto Sans Devanagari for Sanskrit names
 
 Arch / CachyOS:
 
 ```sh
 sudo pacman -S python-cairo ttf-dejavu
+sudo pacman -S python-gobject noto-fonts   # only for Sanskrit names
 paru -S pyswisseph               # AUR (or yay)
 ```
 
@@ -77,6 +79,8 @@ Then open the desktop widget editor and add **Ephemeris** to a monitor.
 | Primary ayanamsa | Fagan/Bradley | or `Lahiri`; used for dignities and the summary    |
 | Font             | 0xProto       | a monospaced font keeps the columns tidy           |
 | Font size        | 20            | the table shrinks if it would not fit              |
+| Sanskrit names   | off           | nakshatras and the Lahiri/Nakshatra headings in Devanagari |
+| Planet order     | Heliocentric  | or Geocentric (Earth, Moon, Mercury, Venus, Sun, Mars…) |
 
 ## License
 

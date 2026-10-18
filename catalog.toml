@@ -4,9 +4,9 @@
 [[plugin]]
 id = "traditions/ephemeris"
 name = "Ephemeris"
-version = "1.1.0"
-updated_at = 1792157772
-added_at = 1792157772
+version = "1.2.0"
+updated_at = 1792157777
+added_at = 1792157777
 author = "Traditions"
 license = "AGPL-3.0-or-later"
 icon = "planet"
@@ -17,12 +17,12 @@ tags = ["astronomy", "astrology", "desktop"]
 [[plugin]]
 id = "traditions/orrery"
 name = "Orrery"
-version = "1.2.0"
-updated_at = 1792157772
-added_at = 1792157772
+version = "1.3.0"
+updated_at = 1792157777
+added_at = 1792157777
 author = "Traditions"
 license = "AGPL-3.0-or-later"
 icon = "planet"
-description = "The solar system right now: planets, Moon, Chiron and the galactic center over the zodiac, with positions."
+description = "The solar system right now: planets, Moon, Chiron, lunar nodes and the galactic center over a tropical or sidereal zodiac, with positions."
 plugin_api = 24
 tags = ["astronomy", "planets", "zodiac", "desktop"]

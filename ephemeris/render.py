@@ -3,7 +3,8 @@
 table plus a short summary of the highlights, drawn to a PNG for the Noctalia
 desktop widget (desktop.luau).
 
-    render.py <out.png> [scale] [font] [font size] [primary ayanamsa]
+    render.py <out.png> [scale] [font] [font size] [primary ayanamsa] [sanskrit 0|1]
+              [order heliocentric|geocentric]
 
 Prints "height=<px>" (design units, width 900) so the widget can size itself.
 
@@ -25,14 +26,16 @@ import swisseph as swe
 W = 900                         # design width
 FONT = "DejaVu Sans Mono"       # widget setting "font"
 GLYPHS = "DejaVu Sans"          # planet and sign symbols
+DEVANAGARI = "Noto Sans Devanagari"
+DEVA_SCALE = 1.2                # Devanagari looks small next to Latin at the same size
 K = 1.0                         # font size setting / 14
 
 #          name       swe id       symbol  symbol font            station window (days)
 BODIES = [
     ("Sun",     swe.SUN,     "☉", None,                  0),
-    ("Moon",    swe.MOON,    "☽", None,                  0),
     ("Mercury", swe.MERCURY, "☿", None,                  1.5),
     ("Venus",   swe.VENUS,   "♀", None,                  2.5),
+    ("Moon",    swe.MOON,    "☽", None,                  0),
     ("Mars",    swe.MARS,    "♂", None,                  3),
     ("Jupiter", swe.JUPITER, "♃", None,                  5),
     ("Saturn",  swe.SATURN,  "♄", None,                  6),
@@ -40,6 +43,15 @@ BODIES = [
     ("Neptune", swe.NEPTUNE, "♆", None,                  8),
     ("Pluto",   swe.PLUTO,   "⯓", None,                  8),
 ]
+# Row (and summary) order, each starting from its centre: heliocentric by
+# distance from the Sun as in Orrery, with the Moon after Earth; geocentric
+# the Ptolemaic order of the spheres.
+ORDERS = {
+    "heliocentric": ["Sun", "Mercury", "Venus", "Earth", "Moon", "Mars", "Jupiter",
+                     "Saturn", "Uranus", "Neptune", "Pluto"],
+    "geocentric":   ["Earth", "Moon", "Mercury", "Venus", "Sun", "Mars", "Jupiter",
+                     "Saturn", "Uranus", "Neptune", "Pluto"],
+}
 # How far ahead a sign change is worth a mention in the summary (days).
 INGRESS_AHEAD = {"Sun": 5, "Moon": 3, "Mercury": 4, "Venus": 5, "Mars": 7,
                  "Jupiter": 14, "Saturn": 30, "Uranus": 30, "Neptune": 30, "Pluto": 30}
@@ -59,6 +71,11 @@ NAKSHATRAS = ["Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra",
               "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha",
               "Jyeshtha", "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana",
               "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"]
+NAKSHATRAS_SA = ["अश्विनी", "भरणी", "कृत्तिका", "रोहिणी", "मृगशिरा", "आर्द्रा",
+                 "पुनर्वसु", "पुष्य", "आश्लेषा", "मघा", "पूर्वफाल्गुनी",
+                 "उत्तरफाल्गुनी", "हस्त", "चित्रा", "स्वाति", "विशाखा", "अनुराधा",
+                 "ज्येष्ठा", "मूल", "पूर्वाषाढा", "उत्तराषाढा", "श्रवण",
+                 "धनिष्ठा", "शतभिषा", "पूर्वभाद्रपदा", "उत्तरभाद्रपदा", "रेवती"]
 
 AYANAMSAS = {"fagan-bradley": ("Fagan/Bradley", swe.SIDM_FAGAN_BRADLEY),
              "lahiri": ("Lahiri", swe.SIDM_LAHIRI)}
@@ -130,7 +147,7 @@ def dignity(name, sign):
 def nakshatra(lon):
     i = int(lon // (360 / 27))
     pada = int((lon % (360 / 27)) // (360 / 108)) + 1
-    return NAKSHATRAS[i], pada
+    return i, pada
 
 
 def dms(lon):
@@ -294,6 +311,8 @@ def drawn_symbol(cr, sym, x, y, px, col, alpha, align="l", measure=False):
 
 def text(cr, s, x, y, px, col=PALE, alpha=0.9, font=None, measure=False):
     """Draw s with its baseline at y (px already scaled); returns the advance."""
+    if any("\u0900" <= ch <= "\u097f" for ch in s):
+        return deva_text(cr, s, x, y, px, col, alpha, font, measure)
     cr.select_font_face(font or FONT, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
     cr.set_font_size(px)
     adv = cr.text_extents(s).x_advance
@@ -307,7 +326,32 @@ def text(cr, s, x, y, px, col=PALE, alpha=0.9, font=None, measure=False):
     return adv
 
 
+def deva_text(cr, s, x, y, px, col, alpha, font, measure):
+    """Like text(), through Pango so Devanagari vowel signs and conjuncts are shaped.
+    Imported here so PyGObject is only needed with the Sanskrit names setting."""
+    import gi
+    gi.require_version("Pango", "1.0")
+    gi.require_version("PangoCairo", "1.0")
+    from gi.repository import Pango, PangoCairo
+    layout = PangoCairo.create_layout(cr)
+    desc = Pango.FontDescription.from_string(f"{font or FONT}, {DEVANAGARI}")
+    desc.set_absolute_size(px * DEVA_SCALE * Pango.SCALE)
+    layout.set_font_description(desc)
+    layout.set_text(s, -1)
+    adv = layout.get_extents()[1].width / Pango.SCALE
+    if not measure:
+        top = y - layout.get_baseline() / Pango.SCALE
+        for dx, rgba in ((1, (0, 0, 0, 0.6 * alpha)), (0, (*col, alpha))):
+            cr.set_source_rgba(*rgba)
+            cr.move_to(x + dx, top + dx)
+            PangoCairo.show_layout(cr, layout)
+        cr.new_path()
+    return adv
+
+
 SYMBOL_FONT = {sym: font for _, _, sym, font, _ in BODIES if font}
+EARTH = "🜨"                     # opposite the Sun: Earth as seen from the Sun
+SYMBOL_FONT[EARTH] = "Noto Sans Symbols"
 
 
 def glyph(cr, sym, x, y, px, col=PALE, alpha=0.95, measure=False):
@@ -420,6 +464,9 @@ def main():
     key = (sys.argv[5] if len(sys.argv) > 5 else "").strip().lower().replace(" ", "-").replace("/", "-")
     primary = "lahiri" if key.startswith("lahiri") else "fagan-bradley"
     p_name, p_sid = AYANAMSAS[primary]
+    sanskrit = len(sys.argv) > 6 and sys.argv[6].strip().lower() in ("1", "true", "yes", "on")
+    order = ORDERS["geocentric" if len(sys.argv) > 7 and sys.argv[7].strip().lower().startswith("geo")
+                   else "heliocentric"]
     fb_sid, la_sid = swe.SIDM_FAGAN_BRADLEY, swe.SIDM_LAHIRI
 
     now = float(os.environ.get("EPHEMERIS_TIME") or time.time())
@@ -427,7 +474,7 @@ def main():
     jd = swe.julday(tm.tm_year, tm.tm_mon, tm.tm_mday,
                     tm.tm_hour + tm.tm_min / 60 + tm.tm_sec / 3600)
 
-    rows, notes = [], []
+    row_of, note_of = {}, {}
     for name, pid, sym, _, window in BODIES:
         fb = calc(jd, pid, fb_sid)[0]
         la = calc(jd, pid, la_sid)[0]
@@ -435,12 +482,18 @@ def main():
         sign = int(p_lon // 30)
         mot = motion(jd, pid, window, p_sid)
         dig = dignity(name, sign)
-        nak, pada = nakshatra(la)
-        rows.append((sym, fb, la, mot, dig, f"{nak} {pada}"))
+        n, pada = nakshatra(la)
+        nak = NAKSHATRAS[n]
+        row_of[name] = (sym, fb, la, mot, dig, ((NAKSHATRAS_SA if sanskrit else NAKSHATRAS)[n], f" {pada}"))
         ing = next_ingress(jd, pid, p_sid, INGRESS_AHEAD[name])
-        s = summary(name, sym, p_lon, sign, mot, dig, ing, now, nak if name == "Moon" else None)
-        if s:
-            notes.append(s)
+        note_of[name] = summary(name, sym, p_lon, sign, mot, dig, ing, now, nak if name == "Moon" else None)
+        if name == "Sun":                           # Earth: opposite the Sun
+            e_fb, e_la = (fb + 180) % 360, (la + 180) % 360
+            n, pada = nakshatra(e_la)
+            row_of["Earth"] = (EARTH, e_fb, e_la, None, None,
+                               ((NAKSHATRAS_SA if sanskrit else NAKSHATRAS)[n], f" {pada}"))
+    rows = [row_of[name] for name in order]
+    notes = [note_of[name] for name in order if note_of.get(name)]
 
     # Draw on an unbounded recording surface first: the height depends on the
     # wrapped summary. Then replay it, scaled, onto the PNG.
@@ -453,7 +506,8 @@ def main():
     date_s = time.strftime("%a %d %b %Y  %H:%M", loc)
     text(cr, date_s, W - 16 - text(cr, date_s, 0, 0, px, measure=True), y, px, alpha=0.75)
 
-    heads = ["Planet", "Fagan/Bradley", "Lahiri", "Dignity", "Nakshatra"]
+    heads = ["Planet", "Fagan/Bradley", "लाहिड़ी" if sanskrit else "Lahiri", "Dignity",
+             "नक्षत्र" if sanskrit else "Nakshatra"]
 
     def pos_parts(lon, mot):
         p = [("g", SIGNS[int(lon // 30)], PALE), ("t", " " + dms(lon), PALE)]
@@ -465,7 +519,7 @@ def main():
         sym, fb, la, mot, dig, nak = r
         return [[("g", sym, PALE)], pos_parts(fb, mot), pos_parts(la, mot),
                 [("t", dig or "—", GOOD if dig in ("exalted", "own sign") else BAD if dig else PALE)],
-                [("t", nak, PALE)]]
+                [("t", nak[0], PALE), ("t", nak[1], PALE)]]
 
     def measure(kk):
         ws = []

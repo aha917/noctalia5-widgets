@@ -2,7 +2,10 @@
 """Orrery: the solar system as it is right now, drawn to a PNG for the
 Noctalia desktop widget (desktop.luau).
 
-    render.py <out.png> [scale] [font] [table font] [font size]
+    render.py <out.png> [scale] [font] [table font] [font size] [zodiac]
+              [zodiac label 0|1] [zodiac label size] [order heliocentric|geocentric]
+
+zodiac is "tropical" (default) or "fagan-bradley" (sidereal signs).
 
 Positions: Swiss Ephemeris (pyswisseph). Planets use the built-in Moshier
 theory; Chiron comes from ephe/seas_18.se1. Longitudes are heliocentric,
@@ -47,7 +50,7 @@ TEXT_K = 1.0                    # font size setting / 14, the design size of the
 
 def canvas_height(k):
     """Must match desktop.luau, which sizes the widget from it."""
-    return math.floor(TABLE_Y + 345 * k)
+    return math.floor(TABLE_Y + 395 * k)
 
 #            name        swe id         mean AU  colour (r,g,b)          size  period (days)
 PLANETS = [
@@ -73,7 +76,21 @@ GC_SIZE = 3.5                   # drawn like Chiron
 SYMBOLS = {"Moon": "☽", "Mercury": "☿", "Venus": "♀",
            "Earth": ("🜨", "Noto Sans Symbols"), "Mars": "♂", "Jupiter": "♃",
            "Saturn": "♄", "Chiron": "⚷", "Uranus": "♅", "Neptune": "♆",
-           "Pluto": "⯓"}
+           "Pluto": "⯓", "North Node": "☊", "South Node": "☋"}
+
+# The Moon's nodes (true node, geocentric) are marked on the inner edge of the
+# zodiac band at their longitude, like the galactic center.
+NODES = ("North Node", "South Node")
+NODE_COL = (0.85, 0.45, 0.40)
+
+# Table order. Heliocentric: by distance from the Sun. Geocentric: Earth (the
+# centre) first, then the Moon's nodes in place of the Moon, then the rest.
+ORDERS = {
+    "heliocentric": ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Chiron",
+                     "Uranus", "Neptune", "Pluto", "GC", "North Node", "South Node"],
+    "geocentric":   ["Earth", "North Node", "South Node", "Mercury", "Venus", "Mars", "Jupiter",
+                     "Saturn", "Chiron", "Uranus", "Neptune", "Pluto", "GC"],
+}
 
 # The Moon: drawn on a small circle around Earth (its real orbit would be
 # invisible at this scale), in the direction it is seen from Earth.
@@ -379,6 +396,11 @@ def main():
         MONO = sys.argv[4].strip()
     if len(sys.argv) > 5 and sys.argv[5].strip():
         TEXT_K = float(sys.argv[5]) / 14
+    sidereal = (sys.argv[6] if len(sys.argv) > 6 else "").strip().lower().startswith("fagan")
+    show_zodiac = (sys.argv[7] if len(sys.argv) > 7 else "1").strip() != "0"
+    zodiac_px = float(sys.argv[8]) if len(sys.argv) > 8 and sys.argv[8].strip() else 20.0
+    order = ORDERS["geocentric" if len(sys.argv) > 9 and sys.argv[9].strip().lower().startswith("geo")
+                   else "heliocentric"]
     now = float(os.environ.get("ORRERY_TIME") or time.time())
     tm = time.gmtime(now)
     jd = swe.julday(tm.tm_year, tm.tm_mon, tm.tm_mday,
@@ -401,12 +423,20 @@ def main():
     for name, pid, _, _, _, _ in PLANETS:
         pos[name] = helio(jd, pid)
     pos["GC"] = (gc_lon(jd), GC_LAT, GC_AU)
+    nn = swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_MOSEPH)[0][0]
+    pos["North Node"], pos["South Node"] = (nn, 0.0, None), ((nn + 180) % 360, 0.0, None)
     earth_lon = pos["Earth"][0]
-    sun_sign_lon = (earth_lon + 180) % 360            # the Sun's sign seen from Earth
-    hi = int(sun_sign_lon // 30)
+    # Signs start at 0 deg tropical Aries, or for the sidereal zodiac at the
+    # Fagan/Bradley ayanamsa (bodies stay where they are; only the signs move).
+    ayan = 0.0
+    if sidereal:
+        swe.set_sid_mode(swe.SIDM_FAGAN_BRADLEY)
+        ayan = swe.get_ayanamsa_ut(jd)
+    sun_sign_lon = (earth_lon + 180) % 360            # the Sun's position seen from Earth
+    hi = int(((sun_sign_lon - ayan) % 360) // 30)
 
     # ---- zodiac band ----
-    sector_path(cr, hi * 30, hi * 30 + 30)
+    sector_path(cr, hi * 30 + ayan, hi * 30 + 30 + ayan)
     cr.set_source_rgba(0.95, 0.70, 0.25, 0.22)
     cr.fill()
     cr.set_line_width(1)
@@ -415,20 +445,20 @@ def main():
         cr.set_source_rgba(0.75, 0.80, 0.95, 0.45)
         cr.stroke()
     for k in range(12):
-        x0, y0 = band(k * 30, 0)
-        x1, y1 = band(k * 30, 1)
+        x0, y0 = band(k * 30 + ayan, 0)
+        x1, y1 = band(k * 30 + ayan, 1)
         cr.move_to(x0, y0)
         cr.line_to(x1, y1)
         cr.set_source_rgba(0.75, 0.80, 0.95, 0.45)
         cr.stroke()
         for d in range(5, 30, 5):
-            xa, ya = band(k * 30 + d, 1)
-            xb, yb = band(k * 30 + d, 1 - (0.3 if d == 15 else 0.18))
+            xa, ya = band(k * 30 + ayan + d, 1)
+            xb, yb = band(k * 30 + ayan + d, 1 - (0.3 if d == 15 else 0.18))
             cr.move_to(xa, ya)
             cr.line_to(xb, yb)
             cr.set_source_rgba(0.75, 0.80, 0.95, 0.30)
             cr.stroke()
-        gx, gy = band(k * 30 + 15, 0.5)
+        gx, gy = band(k * 30 + ayan + 15, 0.5)
         col = (1.0, 0.75, 0.30) if k == hi else (0.80, 0.85, 1.0)
         cr.select_font_face(GLYPHS, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         cr.set_font_size(ZOD_SIZE)
@@ -488,6 +518,9 @@ def main():
     gdepth = project(pos["GC"][0], BAND_IN)[2]
     bodies.append((gdepth, "GC", gx, gy, gx, gy, (0.0, 0.0, 0.0), GC_SIZE * BODY_X))
     bodies.append((0.0, "Sun", CX, CY, CX, CY, (1.0, 0.82, 0.35), 26 * BODY_X))
+    for name in NODES:
+        nx, ny, ndepth = project(pos[name][0], BAND_IN)
+        bodies.append((ndepth, name, nx, ny, nx, ny, NODE_COL, 3.2))
     # Moon: geocentric direction, on a circle around Earth (see MOON_R).
     mr, _ = swe.calc_ut(jd, swe.MOON, swe.FLG_MOSEPH)
     e_lon, e_lat, e_r = pos["Earth"]
@@ -519,6 +552,13 @@ def main():
     for depth, name, x, y, bx, by, col, size in bodies:
         if name == "Sun":
             sphere(cr, x, y, size, col, glow=1.6)
+            continue
+        if name in NODES:                           # small diamond on the band's inner edge
+            cr.move_to(x, y - size * 1.3); cr.line_to(x + size, y)
+            cr.line_to(x, y + size * 1.3); cr.line_to(x - size, y); cr.close_path()
+            cr.set_source_rgba(*col, 0.95); cr.fill_preserve()
+            cr.set_source_rgba(0, 0, 0, 0.5); cr.set_line_width(0.8); cr.stroke()
+            labels.append((name, x, y, size))
             continue
         if abs(y - by) > 1.5:                       # stalk down to the ecliptic
             cr.move_to(bx, by)
@@ -595,20 +635,29 @@ def main():
     loc = time.localtime(now)
     y0 = TABLE_Y
     k = TEXT_K
-    text(cr, time.strftime("%a %d %b %Y  %H:%M", loc), W - 16, 16 + 14 * k,
-         14, (0.8, 0.84, 0.95), 0.75, align="r")
+    date_w = text(cr, time.strftime("%a %d %b %Y  %H:%M", loc), W - 16, 16 + 14 * k,
+                  14, (0.8, 0.84, 0.95), 0.75, align="r")
+    if show_zodiac:                                   # size in the same units as "Font size"
+        zodiac_s = "Sidereal: Fagan/Bradley" if sidereal else "Tropical"
+        cr.select_font_face(FONT, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+        cr.set_font_size(zodiac_px)
+        room = W - 32 - date_w - 24                   # shrink rather than run into the date
+        zodiac_px *= min(1.0, room / cr.text_extents(zodiac_s).x_advance)
+        text(cr, zodiac_s, 16, 16 + 14 * k, zodiac_px, (0.8, 0.84, 0.95), 0.75, k=1)
     if HEIGHT_X != 1:
         text(cr, f"heights ×{HEIGHT_X}", W - 40, y0, 13, (0.8, 0.84, 0.95), 0.55, align="r")
 
     gold, pale = (1.0, 0.75, 0.30), (0.85, 0.88, 1.0)
     rows = []
-    for name, pid, au, col, _, _ in PLANETS + [("GC", None, GC_AU, (0.0, 0.0, 0.0), GC_SIZE, 0)]:
+    for name, pid, au, col, _, _ in (PLANETS + [("GC", None, GC_AU, (0.0, 0.0, 0.0), GC_SIZE, 0)]
+                                     + [(n, None, None, NODE_COL, 0, 0) for n in NODES]):
         lon, lat, r = pos[name]
-        sign, deg = int(lon // 30), lon % 30
+        slon = (lon - ayan) % 360
+        sign, deg = int(slon // 30), slon % 30
         d, m = int(deg), int(round((deg - int(deg)) * 60))
         if m == 60:
             d, m = d + 1, 0
-        if name == "Earth":
+        if name == "Earth" or name in NODES:
             dist_s, light_s = "—", "—"
         elif name == "GC":
             dist_s, light_s = f"{GC_AU:.2e}".replace("e+0", "e"), f"{GC_LY / 1000:.1f}k y"
@@ -616,7 +665,8 @@ def main():
             dist = geo_distance(jd, pid)
             dist_s, light_s = f"{dist:.3f}", fmt_light(dist)
         rows.append((name, col, [name, f"{lon:.2f}°", f"{lat:+.2f}°", SIGNS[sign] + f"{d:2d}°{m:02d}'",
-                                 dist_s if name == "GC" else f"{r:.3f}", dist_s, light_s]))
+                                 dist_s if name == "GC" or r is None else f"{r:.3f}", dist_s, light_s]))
+    rows.sort(key=lambda row: order.index(row[0]))
     heads = ["Planet", "Lon λ", "Lat β", "Sign", "Sun AU", "Earth AU", "Light"]
     right = [False, True, True, False, True, True, True]
 

@@ -19,6 +19,18 @@
     "font_size": {
       "label": "Font size",
       "description": "Size of the body text in px; the table shrinks if it would not fit."
+    },
+    "sanskrit": {
+      "label": "Sanskrit names",
+      "description": "Show the nakshatras and the Lahiri and Nakshatra column headings in Devanagari (needs Noto Sans Devanagari)."
+    },
+    "order": {
+      "label": "Planet order",
+      "description": "Heliocentric: Sun, Mercury, Venus, Earth, Moon, Mars… (as in Orrery). Geocentric: Earth, Moon, Mercury, Venus, Sun, Mars… (the Ptolemaic order).",
+      "options": {
+        "heliocentric": "Heliocentric",
+        "geocentric": "Geocentric"
+      }
     }
   }
 }

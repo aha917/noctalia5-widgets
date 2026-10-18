@@ -19,6 +19,30 @@
     "font_size": {
       "label": "Font size",
       "description": "Size of the body text in px; headings scale along."
+    },
+    "zodiac": {
+      "label": "Zodiac",
+      "description": "Where the signs on the ring and in the Sign column start: the equinox (tropical) or the stars (sidereal, Fagan/Bradley ayanamsa).",
+      "options": {
+        "tropical": "Tropical",
+        "fagan-bradley": "Sidereal (Fagan/Bradley)"
+      }
+    },
+    "zodiac_label": {
+      "label": "Show zodiac label",
+      "description": "Show \"Tropical\" or \"Sidereal: Fagan/Bradley\" in the top left corner."
+    },
+    "zodiac_font_size": {
+      "label": "Zodiac font size",
+      "description": "Size of the zodiac label in px, like Font size: the same number as Font size matches the date."
+    },
+    "order": {
+      "label": "Table order",
+      "description": "Heliocentric: Mercury, Venus, Earth, Mars… by distance from the Sun. Geocentric: Earth first, then the Moon's nodes, then Mercury, Venus, Mars…",
+      "options": {
+        "heliocentric": "Heliocentric",
+        "geocentric": "Geocentric"
+      }
     }
   }
 }

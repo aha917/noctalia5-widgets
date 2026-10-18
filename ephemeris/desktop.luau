@@ -15,6 +15,8 @@ local interval = noctalia.getConfig("interval") or 60
 local primary = noctalia.getConfig("primary") or "Fagan/Bradley"
 local font = noctalia.getConfig("font") or "0xProto"
 local fontSize = noctalia.getConfig("font_size") or 20
+local sanskrit = noctalia.getConfig("sanskrit") == true
+local order = noctalia.getConfig("order") or "heliocentric"
 local H = 1000 -- until the first render reports the real height
 
 local dir = noctalia.pluginDir()
@@ -61,7 +63,7 @@ local function redraw()
   local out = dataDir .. "/frame-" .. instance .. "-" .. frame .. ".png"
   -- Render at twice the displayed size so it stays sharp on scaled outputs.
   local scale = string.format("%.3f", 2 * size / W)
-  noctalia.runAsync({ python, "-I", dir .. "/render.py", out, scale, font, tostring(fontSize), primary }, function(result)
+  noctalia.runAsync({ python, "-I", dir .. "/render.py", out, scale, font, tostring(fontSize), primary, sanskrit and "1" or "0", order }, function(result)
     busy = false
     if result.exitCode == 0 then
       local h = tonumber(string.match(result.stdout or "", "height=(%d+)"))

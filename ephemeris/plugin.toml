@@ -5,7 +5,7 @@
 
 id = "traditions/ephemeris"
 name = "Ephemeris"
-version = "1.1.0"
+version = "1.2.0"
 plugin_api = 24
 author = "Traditions"
 license = "AGPL-3.0-or-later"
@@ -58,3 +58,21 @@ entry = "desktop.luau"
   default = 20
   min = 8
   max = 26
+
+  [[desktop_widget.setting]]
+  key = "sanskrit"
+  type = "bool"
+  label_key = "settings.sanskrit.label"
+  description_key = "settings.sanskrit.description"
+  default = false
+
+  [[desktop_widget.setting]]
+  key = "order"
+  type = "select"
+  label_key = "settings.order.label"
+  description_key = "settings.order.description"
+  default = "heliocentric"
+  options = [
+    { value = "heliocentric", label_key = "settings.order.options.heliocentric" },
+    { value = "geocentric", label_key = "settings.order.options.geocentric" },
+  ]
