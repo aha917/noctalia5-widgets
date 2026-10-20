@@ -88,14 +88,15 @@ SYMBOLS = {"Moon": "☽", "Mercury": "☿", "Venus": "♀",
 # The Moon's nodes (true node, geocentric) are marked on the inner edge of the
 # zodiac band at their longitude, like the galactic center.
 NODES = ("North Node", "South Node")
+SUN_COL = (1.0, 0.82, 0.35)
 NODE_COL = (0.85, 0.45, 0.40)
 
-# Table order. Heliocentric: by distance from the Sun. Geocentric: Earth (the
-# centre) first, then the Moon's nodes in place of the Moon, then the rest.
+# Table order. Heliocentric: the Sun, then by distance from it. Geocentric: Earth
+# (the centre) first, then the Sun, then the Moon's nodes in place of the Moon, then the rest.
 ORDERS = {
-    "heliocentric": ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Chiron",
+    "heliocentric": ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Chiron",
                      "Uranus", "Neptune", "Pluto", "GC", "GA", "North Node", "South Node"],
-    "geocentric":   ["Earth", "North Node", "South Node", "Mercury", "Venus", "Mars", "Jupiter",
+    "geocentric":   ["Earth", "Sun", "North Node", "South Node", "Mercury", "Venus", "Mars", "Jupiter",
                      "Saturn", "Chiron", "Uranus", "Neptune", "Pluto", "GC", "GA"],
 }
 
@@ -438,6 +439,8 @@ def main():
     pos = {}
     for name, pid, _, _, _, _ in PLANETS:
         pos[name] = helio(jd, pid)
+    sun = swe.calc_ut(jd, swe.SUN, swe.FLG_MOSEPH)[0]   # as seen from Earth
+    pos["Sun"] = (sun[0], sun[1], None)
     pos["GC"] = (precess_lon(GC_LON, jd), GC_LAT, GC_AU)
     pos["GA"] = (precess_lon(GA_LON, jd), GA_LAT, GA_AU)
     nn = swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_MOSEPH)[0][0]
@@ -546,7 +549,7 @@ def main():
                        for l, r, tp, bt in glyph_boxes):
                 break
         bodies.append((project(lon, BAND_IN)[2], name, gx, gy, gx, gy, col, GC_SIZE * BODY_X))
-    bodies.append((0.0, "Sun", CX, CY, CX, CY, (1.0, 0.82, 0.35), 26 * BODY_X))
+    bodies.append((0.0, "Sun", CX, CY, CX, CY, SUN_COL, 26 * BODY_X))
     for name in NODES:
         if name in hidden:
             continue
@@ -682,7 +685,7 @@ def main():
 
     gold, pale = (1.0, 0.75, 0.30), (0.85, 0.88, 1.0)
     rows = []
-    for name, pid, au, col, _, _ in (PLANETS + [("GC", None, GC_AU, (0.0, 0.0, 0.0), GC_SIZE, 0),
+    for name, pid, au, col, _, _ in ([("Sun", None, 0.0, SUN_COL, 0, 0)] + PLANETS + [("GC", None, GC_AU, (0.0, 0.0, 0.0), GC_SIZE, 0),
                                                 ("GA", None, GA_AU, GA_COL, GC_SIZE, 0)]
                                      + [(n, None, None, NODE_COL, 0, 0) for n in NODES]):
         lon, lat, r = pos[name]
@@ -693,6 +696,8 @@ def main():
             d, m = d + 1, 0
         if name == "Earth" or name in NODES:
             dist_s, light_s = "—", "—"
+        elif name == "Sun":
+            dist_s, light_s = f"{sun[2]:.3f}", fmt_light(sun[2])
         elif name == "GC":
             dist_s, light_s = f"{GC_AU:.2e}".replace("e+0", "e"), f"{GC_LY / 1000:.1f}k y"
         elif name == "GA":
@@ -701,9 +706,10 @@ def main():
             dist = geo_distance(jd, pid)
             dist_s, light_s = f"{dist:.3f}", fmt_light(dist)
         rows.append((name, col, [name, f"{lon:.2f}°", f"{lat:+.2f}°", SIGNS[sign] + f"{d:2d}°{m:02d}'",
-                                 dist_s if name in ("GC", "GA") or r is None else f"{r:.3f}", dist_s, light_s]))
+                                 "—" if name == "Sun" else dist_s if name in ("GC", "GA") or r is None else f"{r:.3f}",
+                                 dist_s, light_s]))
     rows = sorted((row for row in rows if row[0] in order), key=lambda row: order.index(row[0]))
-    heads = ["Planet", "Lon λ", "Lat β", "Sign", "Sun AU", "Earth AU", "Light"]
+    heads = ["Object", "Lon λ", "Lat β", "Sign", "Sun AU", "Earth AU", "Light"]
     right = [False, True, True, False, True, True, True]
 
     def width(s, size, font):

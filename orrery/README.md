@@ -39,21 +39,22 @@ ring.
 ### The table
 
 One row per body, in heliocentric or geocentric order (see *Table order*):
-Mercury, Venus, Earth, Mars, Jupiter, Saturn, Chiron, Uranus, Neptune, Pluto,
+the Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Chiron, Uranus, Neptune, Pluto,
 then GC, GA and the two nodes when they are shown. Each row starts with a dot
 in the body's colour.
 
 | Column   | Meaning |
 |----------|---------|
-| Planet   | name |
-| Lon λ    | ecliptic longitude: heliocentric for the planets (tropical, of date); for the nodes, GC and GA, as seen from Earth |
+| Object   | name |
+| Lon λ    | ecliptic longitude: heliocentric for the planets (tropical, of date); for the Sun, the nodes, GC and GA, as seen from Earth |
 | Lat β    | ecliptic latitude (0° for the nodes) |
 | Sign     | sign and degree of that longitude, tropical or sidereal (see *Zodiac*); Earth's sign is in gold |
 | Sun AU   | distance from the Sun in astronomical units |
 | Earth AU | distance from Earth |
 | Light    | light travel time to Earth: minutes (m), hours (h) or years (y) |
 
-The nodes have no distance (they are points, not bodies), shown as "—".
+The nodes have no distance (they are points, not bodies), shown as "—"; nor
+has the Sun from itself.
 
 ### Positions and sources
 
@@ -141,7 +142,7 @@ its own settings.
 | Table font | 0xProto | a monospaced font keeps the columns tidy |
 | Font size | 20 | 8–26; the table shrinks if it would not fit the width |
 | Zodiac | Sidereal (Fagan/Bradley) | or Tropical, see above |
-| Table order | Heliocentric | Mercury, Venus, Earth, Mars… by distance from the Sun; or Geocentric: Earth first, then the Moon's nodes, then Mercury, Venus, Mars… |
+| Table order | Heliocentric | the Sun, then Mercury, Venus, Earth, Mars… by distance from it; or Geocentric: Earth first, then the Sun, then the Moon's nodes, then Mercury, Venus, Mars… |
 | Show: galactic center | on | the GC on the ring and in the table |
 | Show: Great Attractor | on | the GA on the ring and in the table |
 | Show: Moon's nodes | on | ☊ ☋ on the ring and in the table |

@@ -23,8 +23,8 @@ local function on(key)                      -- bool settings that default to tru
   return v == nil or v == true
 end
 local showGC, showGA, showNodes = on("show_gc"), on("show_ga"), on("show_nodes")
--- same formula as canvas_height() in render.py: 10 planet rows plus the optional ones
-local rows = 10 + (showGC and 1 or 0) + (showGA and 1 or 0) + (showNodes and 2 or 0)
+-- same formula as canvas_height() in render.py: the Sun and 10 planet rows plus the optional ones
+local rows = 11 + (showGC and 1 or 0) + (showGA and 1 or 0) + (showNodes and 2 or 0)
 local H = math.floor(470 + (70 + 25 * rows) * fontSize / 14)
 
 local dir = noctalia.pluginDir()

@@ -30,7 +30,7 @@
     },
     "order": {
       "label": "Table order",
-      "description": "Heliocentric: Mercury, Venus, Earth, Mars… by distance from the Sun. Geocentric: Earth first, then the Moon's nodes, then Mercury, Venus, Mars…",
+      "description": "Heliocentric: the Sun, then Mercury, Venus, Earth, Mars… by distance from it. Geocentric: Earth first, then the Sun, then the Moon's nodes, then Mercury, Venus, Mars…",
       "options": {
         "heliocentric": "Heliocentric",
         "geocentric": "Geocentric"
