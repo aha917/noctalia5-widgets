@@ -17,8 +17,8 @@ tags = ["astronomy", "astrology", "desktop"]
 [[plugin]]
 id = "traditions/orrery"
 name = "Orrery"
-version = "1.4.0"
-updated_at = 1792323860
+version = "1.5.0"
+updated_at = 1792536260
 added_at = 1792157777
 author = "Traditions"
 license = "AGPL-3.0-or-later"
