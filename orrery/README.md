@@ -28,9 +28,14 @@ positions are computed locally with the Swiss Ephemeris.
 | **Zodiac label** | top left: **Sidereal: Fagan/Bradley** or **Tropical** |
 | **Date and time** | top right |
 
-Saturn, Jupiter and Pluto are drawn by the widget as vector outlines; the other
-symbols come from fonts. Every label is placed in the nearest free spot around
+All astrological symbols (planets, nodes and signs) are the widget's own
+vector outlines from `symbols.json`, so they look the same whatever fonts are
+installed. Every label is placed in the nearest free spot around
 its body, clear of other bodies, labels and the sign symbols.
+
+The planets are shaded as spheres lit from the Sun's real direction in 3D, so
+those between the Sun and the viewer show their night side; the Sun has a
+soft corona and a limb-darkened disc.
 
 Distances are compressed (the scale shrinks with distance from the Sun) so
 that the inner planets stay visible next to Pluto, and Pluto stays inside the
@@ -84,12 +89,12 @@ The zodiac label in the top left corner says which one is in use.
 
 - Noctalia v5 (plugin API 24)
 - `python3` with **pycairo** and **pyswisseph** (Swiss Ephemeris)
-- Fonts: DejaVu Sans (sign and planet symbols) and Noto Sans Symbols (🜨)
+- Font: DejaVu Sans (default text font, and the Greek λ β in the table header)
 
 Arch Linux (and Arch-based distributions):
 
 ```sh
-sudo pacman -S python-cairo ttf-dejavu noto-fonts
+sudo pacman -S python-cairo ttf-dejavu
 paru -S pyswisseph               # AUR (or yay)
 ```
 

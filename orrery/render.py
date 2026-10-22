@@ -20,6 +20,7 @@ outer band is the zodiac; the sign the Sun is in as seen from Earth (the one
 Earth looks at across the Sun) is highlighted, with a dashed sight line from
 Earth through the Sun.
 """
+import json
 import math
 import os
 import random
@@ -45,7 +46,7 @@ BAND_EXTRA = 18                 # extra height of the band's outer edge (px), so
                                 # band is about as wide at the front and back as at the sides
 FONT = "DejaVu Sans"            # labels and titles (widget setting "font")
 MONO = "DejaVu Sans Mono"       # table (widget setting "table_font")
-GLYPHS = "DejaVu Sans"          # zodiac signs: many fonts lack U+2648..2653
+GLYPHS = "DejaVu Sans"          # Greek letters in the table header: many mono fonts lack them
 TEXT_K = 1.0                    # font size setting / 14, the design size of the table text
 
 
@@ -78,12 +79,12 @@ GA_AU = 62e6 * 206264.806
 GA_LY = 62e6 * 3.26156
 GA_COL = (1.0, 1.0, 1.0)        # a white, glowing ball
 
-# Picture labels: astrological symbols, with the font that has them (GLYPHS
-# unless named); GC keeps its name. Saturn and Jupiter are drawn outlines (drawn_symbol).
-SYMBOLS = {"Moon": "☽", "Mercury": "☿", "Venus": "♀",
-           "Earth": ("🜨", "Noto Sans Symbols"), "Mars": "♂", "Jupiter": "♃",
-           "Saturn": "♄", "Chiron": "⚷", "Uranus": "♅", "Neptune": "♆",
-           "Pluto": "⯓", "North Node": "☊", "South Node": "☋"}
+# Picture labels: astrological symbols (keys of symbols.json); GC and GA keep
+# their names.
+SYMBOLS = {"Moon": "moon", "Mercury": "mercury", "Venus": "venus", "Earth": "earth",
+           "Mars": "mars", "Jupiter": "jupiter", "Saturn": "saturn", "Chiron": "chiron",
+           "Uranus": "uranus", "Neptune": "neptune", "Pluto": "pluto",
+           "North Node": "north-node", "South Node": "south-node"}
 
 # The Moon's nodes (true node, geocentric) are marked on the inner edge of the
 # zodiac band at their longitude, like the galactic center.
@@ -107,7 +108,9 @@ MOON_COL = (0.82, 0.82, 0.80)
 MOON_SIZE = 2.2
 SYM_SIZE = 17                   # symbol labels, scaled with the font size like the text
 
-SIGNS = "♈♉♊♋♌♍♎♏♐♑♒♓"
+SIGNS = "♈♉♊♋♌♍♎♏♐♑♒♓"            # in table cells; drawn as the symbols below
+SIGN_KEYS = dict(zip(SIGNS, ["aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra",
+                             "scorpio", "sagittarius", "capricorn", "aquarius", "pisces"]))
 
 # Distance compression: AU -> fraction of the inner radius of the zodiac band.
 # Pluto (29.7-49.3 AU) stays inside the band. Chiron is left out of the knots (its orbit is very eccentric) and simply
@@ -161,6 +164,87 @@ def sphere(cr, x, y, rad, col, glow=0.0):
     cr.fill()
 
 
+ELEV = math.asin(TILT)          # viewing angle above the ecliptic plane
+AMBIENT = 0.20                  # light on the night side, so planets in front of the Sun stay visible
+
+
+def lit_sphere(cr, x, y, rad, col, light, glow=0.0):
+    """A planet lit by the Sun. light = direction to the Sun in the picture's
+    3D frame (x right, y towards the back, z up); the disc is shaded per pixel,
+    so a planet in front of the Sun shows a crescent, one behind it is full."""
+    if glow:
+        g = cairo.RadialGradient(x, y, rad * 0.5, x, y, rad * (1 + glow))
+        g.add_color_stop_rgba(0, *col, 0.30)
+        g.add_color_stop_rgba(1, *col, 0.0)
+        cr.set_source(g)
+        cr.arc(x, y, rad * (1 + glow), 0, 2 * math.pi)
+        cr.fill()
+    lx, ly, lz = light
+    n = math.sqrt(lx * lx + ly * ly + lz * lz) or 1
+    lx, ly, lz = lx / n, ly / n, lz / n
+    se, ce = math.sin(ELEV), math.cos(ELEV)
+    sx, sy, sz = lx, ly * se + lz * ce, -ly * ce + lz * se   # screen right, up, towards viewer
+    hx, hy, hz = sx, sy, sz + 1                              # half vector for the sheen
+    hn = math.sqrt(hx * hx + hy * hy + hz * hz) or 1
+    hx, hy, hz = hx / hn, hy / hn, hz / hn
+    dev = cr.get_matrix().xx                                 # device pixels per unit
+    R = rad * dev
+    size = int(math.ceil(2 * R)) + 2
+    img = cairo.ImageSurface(cairo.FORMAT_ARGB32, size, size)
+    stride = img.get_stride()
+    buf = bytearray(stride * size)
+    c0 = size / 2
+    for j in range(size):
+        v = (c0 - (j + 0.5)) / R
+        row = j * stride
+        for i in range(size):
+            u = ((i + 0.5) - c0) / R
+            rr = u * u + v * v
+            cov = min(1.0, max(0.0, (1 - math.sqrt(rr)) * R + 0.5))
+            if cov <= 0:
+                continue
+            w = math.sqrt(max(0.0, 1 - min(rr, 1)))
+            d = u * sx + v * sy + w * sz
+            lit = AMBIENT + (1 - AMBIENT) * max(0.0, (d + 0.12) / 1.12) ** 0.9   # soft terminator
+            spec = max(0.0, u * hx + v * hy + w * hz) ** 24 * 0.25 if d > 0 else 0
+            limb = 0.85 + 0.15 * w
+            px = []
+            for c in col:
+                px.append(min(1.0, c * lit * limb + spec) * cov)
+            o = row + i * 4                                  # BGRA, premultiplied
+            buf[o] = int(px[2] * 255)
+            buf[o + 1] = int(px[1] * 255)
+            buf[o + 2] = int(px[0] * 255)
+            buf[o + 3] = int(cov * 255)
+    img.get_data()[:] = buf
+    img.mark_dirty()
+    cr.save()
+    cr.translate(x - size / 2 / dev, y - size / 2 / dev)
+    cr.scale(1 / dev, 1 / dev)
+    cr.set_source_surface(img, 0, 0)
+    cr.paint()
+    cr.restore()
+
+
+def sun_sphere(cr, x, y, rad, glow=1.6):
+    """The Sun: a soft corona and a disc darkening towards its rim."""
+    g = cairo.RadialGradient(x, y, rad * 0.6, x, y, rad * (1 + glow))
+    g.add_color_stop_rgba(0, 1.0, 0.82, 0.40, 0.55)
+    g.add_color_stop_rgba(0.35, 1.0, 0.70, 0.25, 0.20)
+    g.add_color_stop_rgba(1, 1.0, 0.60, 0.20, 0.0)
+    cr.set_source(g)
+    cr.arc(x, y, rad * (1 + glow), 0, 2 * math.pi)
+    cr.fill()
+    g = cairo.RadialGradient(x, y, 0, x, y, rad)
+    g.add_color_stop_rgb(0, 1.0, 0.98, 0.88)
+    g.add_color_stop_rgb(0.55, 1.0, 0.92, 0.62)
+    g.add_color_stop_rgb(0.85, 1.0, 0.80, 0.38)
+    g.add_color_stop_rgb(1, 0.93, 0.58, 0.18)
+    cr.set_source(g)
+    cr.arc(x, y, rad, 0, 2 * math.pi)
+    cr.fill()
+
+
 def black_sphere(cr, x, y, rad):
     """The galactic center: a black ball, lit from the upper left like the
     planets, with a faint halo so it stands out against the dark sky."""
@@ -180,153 +264,63 @@ def black_sphere(cr, x, y, rad):
 
 
 # ------------------------------------------ drawn Saturn, Jupiter and Pluto --
-# Saturn (heavy stem, thin bar, tapering hook), Jupiter (curved "2"-like top)
-# and Pluto (ring in a close cup over a cross) are filled outlines rather than
-# font glyphs. Coordinates: Saturn in a 340-unit box, Jupiter in a 576-unit
-# box, Pluto in a 276 x 250 box, y down; drawn_symbol scales them.
+# Astrological symbols are filled outlines from symbols.json (a 100-unit box,
+# y down, each symbol centred in it); every op is M/L/C with absolute
+# coordinates, or Z.
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "symbols.json")) as _f:
+    _SYMS = json.load(_f)
+SYM_K = 1.25                    # symbol box size, as a fraction of the font size
+SYM_SCALE = {"earth": 0.7, "moon": 0.7, "uranus": 0.8}    # these look heavy at full size
 
 
-def _bez(p0, p1, p2, p3, t):
-    u = 1 - t
-    return (u**3 * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t**3 * p3[0],
-            u**3 * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t**3 * p3[1])
+def _sym_path(cr, key):
+    for op in _SYMS[key]["ops"]:
+        if op[0] == "C":
+            cr.curve_to(*op[1:])
+        elif op[0] == "L":
+            cr.line_to(*op[1:])
+        elif op[0] == "M":
+            cr.move_to(*op[1:])
+        else:
+            cr.close_path()
 
 
-def _poly(cr, pts):
-    """Add a closed polygon, always turning clockwise (y down)."""
-    area = sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in zip(pts, pts[1:] + pts[:1]))
-    if area < 0:
-        pts = pts[::-1]
-    cr.move_to(*pts[0])
-    for p in pts[1:]:
-        cr.line_to(*p)
-    cr.close_path()
-
-
-def _rect(cr, x, y, w, h):
-    _poly(cr, [(x, y), (x + w, y), (x + w, y + h), (x, y + h)])
-
-
-def _brush(cr, segments, width, n=48):
-    """A stroke along cubic segments whose width follows width(s), s = 0..1."""
-    c = [_bez(*seg, i / n) for seg in segments for i in range(n)] + [segments[-1][3]]
-    lens = [0.0]
-    for a, b in zip(c, c[1:]):
-        lens.append(lens[-1] + math.dist(a, b))
-    left, right = [], []
-    for i, (x, y) in enumerate(c):
-        a, b = c[max(i - 1, 0)], c[min(i + 1, len(c) - 1)]
-        dx, dy = b[0] - a[0], b[1] - a[1]
-        d = math.hypot(dx, dy) or 1
-        w = width(lens[i] / lens[-1]) / 2
-        left.append((x - dy / d * w, y + dx / d * w))
-        right.append((x + dy / d * w, y - dx / d * w))
-    _poly(cr, left + right[::-1])
-
-
-def _flat(cr, build):
-    """Flatten a curved outline built by build(cr) and add it, clockwise."""
-    cr.save(); cr.new_path(); build(cr)
-    pts = [p for kind, p in cr.copy_path_flat() if kind in (0, 1)]
-    cr.new_path(); cr.restore()
-    return pts
-
-
-def _saturn_path(cr):
-    def hook(c):
-        c.move_to(150, 150)
-        c.curve_to(178, 112, 240, 105, 266, 158)
-        c.curve_to(292, 215, 245, 292, 100, 328)
-        c.curve_to(205, 282, 242, 220, 228, 182)
-        c.curve_to(218, 155, 188, 150, 163, 178)
-        c.line_to(150, 178)
-        c.close_path()
-    pts = _flat(cr, hook)
-    cr.new_path()
-    _rect(cr, 120, 12, 43, 188)      # thick stem
-    _rect(cr, 60, 50, 202, 12)       # thin cross bar, longer to the right
-    _poly(cr, pts)                   # hook, tapering to a point at the lower left
-
-
-def _jupiter_path(cr):
-    # curved top: pointed start, heavy shoulder, a diagonal thinning down to
-    # a sharp corner on the bar; the stem stands apart with a slanted top
-    def curve(c):
-        c.move_to(155, 172)
-        c.curve_to(178, 112, 222, 80, 265, 80)
-        c.curve_to(322, 80, 364, 120, 361, 180)
-        c.curve_to(354, 244, 272, 312, 186, 388)
-        c.line_to(145, 405)
-        c.curve_to(214, 332, 296, 258, 306, 192)
-        c.curve_to(311, 140, 290, 116, 256, 116)
-        c.curve_to(216, 116, 182, 136, 155, 172)
-        c.close_path()
-    pts = _flat(cr, curve)
-    cr.new_path()
-    _poly(cr, pts)
-    _rect(cr, 145, 388, 283, 17)                                 # thin cross bar
-    _poly(cr, [(313, 330), (355, 283), (355, 488), (313, 488)])  # stem, slanted top
-
-
-def _pluto_path(cr):
-    # ring, a cup hugging it closely, then the cross below
-    t = 20                                            # line weight, as Venus
-    cx, cy, ro = 138, 72, 47                          # ring
-    ri = ro - t
-    ucy, uri = 78, ro + 7                             # cup: centre, inner radius
-    uro = uri + t
-
-    def cup(c):
-        c.move_to(cx - uro, cy)
-        c.line_to(cx - uro, ucy)
-        c.arc_negative(cx, ucy, uro, math.pi, 0)
-        c.line_to(cx + uro, cy)
-        c.line_to(cx + uri, cy)
-        c.line_to(cx + uri, ucy)
-        c.arc(cx, ucy, uri, 0, math.pi)
-        c.line_to(cx - uri, cy)
-        c.close_path()
-    pts = _flat(cr, cup)
-    cr.new_path()
-    cr.new_sub_path(); cr.arc(cx, cy, ro, 0, 2 * math.pi); cr.close_path()
-    cr.new_sub_path(); cr.arc_negative(cx, cy, ri, 2 * math.pi, 0); cr.close_path()  # hole
-    _poly(cr, pts)
-    _rect(cr, cx - t / 2, ucy + uro - 4, t, 250 - (ucy + uro - 4))  # stem
-    _rect(cr, cx - 34, 196, 68, t)                                   # cross bar
-
-
-_DRAWN = {"♄": _saturn_path, "♃": _jupiter_path, "⯓": _pluto_path}
-
-
-def _extents(build):
+def _sym_extents(key):
     c = cairo.Context(cairo.RecordingSurface(cairo.CONTENT_ALPHA, None))
-    build(c)
+    _sym_path(c, key)
     return c.fill_extents()
 
 
-_DRAWN_EXT = {s: _extents(f) for s, f in _DRAWN.items()}
+_SYM_EXT = {key: _sym_extents(key) for key in _SYMS}
 
 
-def drawn_symbol(cr, sym, x, y, px, col, alpha, align="l", measure=False):
-    """Saturn, Jupiter or Pluto at font size px; (x, y) is the baseline start like
-    show_text (align "r": x is the right end). Returns the advance."""
-    x0, y0, x1, y1 = _DRAWN_EXT[sym]
-    k = 0.92 * px / (y1 - y0)                       # cap height plus a short descender
+def symbol(cr, key, x, y, px, col, alpha, align="l", measure=False, centre=False):
+    """Draw symbol `key` at font size px. (x, y) is the baseline start like
+    show_text (align "r": x is the right end), or with centre=True the middle
+    of the symbol. Returns the advance."""
+    x0, y0, x1, y1 = _SYM_EXT[key]
+    k = SYM_K * SYM_SCALE.get(key, 1) * px / 100
     adv = (x1 - x0) * k + 0.14 * px
     if measure:
         return adv
-    if align == "r":
-        x -= adv
+    if centre:
+        ox, oy = x - (x0 + x1) / 2 * k, y - (y0 + y1) / 2 * k
+    else:
+        if align == "r":
+            x -= adv
+        ox, oy = x + 0.07 * px - x0 * k, y - 0.34 * px - 50 * k
+    rule = cairo.FILL_RULE_EVEN_ODD if _SYMS[key].get("evenodd") else cairo.FILL_RULE_WINDING
     for d, c, a in ((1, (0, 0, 0), 0.6 * alpha), (0, col, alpha)):
         cr.save()
-        cr.translate(x + 0.07 * px - x0 * k + d, y - 0.76 * px - y0 * k + d)
+        cr.translate(ox + d, oy + d)
         cr.scale(k, k)
-        _DRAWN[sym](cr)
+        _sym_path(cr, key)
         cr.restore()
+        cr.set_fill_rule(rule)
         cr.set_source_rgba(*c, a)
         cr.fill()
+    cr.set_fill_rule(cairo.FILL_RULE_WINDING)
     return adv
-
 
 def text(cr, s, x, y, size, col=(1, 1, 1), alpha=0.85, font=None, align="l", bold=False, k=None):
     cr.select_font_face(font or FONT, cairo.FONT_SLANT_NORMAL,
@@ -481,13 +475,11 @@ def main():
             cr.stroke()
         gx, gy = band(k * 30 + ayan + 15, 0.5)
         col = (1.0, 0.75, 0.30) if k == hi else (0.80, 0.85, 1.0)
-        cr.select_font_face(GLYPHS, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-        cr.set_font_size(ZOD_SIZE)
-        ext = cr.text_extents(SIGNS[k])                 # centre the glyph vertically on the band
-        text(cr, SIGNS[k], gx, gy - ext.y_bearing - ext.height / 2, ZOD_SIZE, col,
-             1.0 if k == hi else 0.7, GLYPHS, align="c", k=1)
-        glyph_boxes.append((gx - ext.width / 2 - 2, gx + ext.width / 2 + 2,
-                            gy - ext.height / 2 - 2, gy + ext.height / 2 + 2))
+        key = SIGN_KEYS[SIGNS[k]]
+        symbol(cr, key, gx, gy, ZOD_SIZE, col, 1.0 if k == hi else 0.7, centre=True)
+        ex0, ey0, ex1, ey1 = _SYM_EXT[key]
+        hw, hh = (ex1 - ex0) * SYM_K * ZOD_SIZE / 200, (ey1 - ey0) * SYM_K * ZOD_SIZE / 200
+        glyph_boxes.append((gx - hw - 2, gx + hw + 2, gy - hh - 2, gy + hh + 2))
 
     # ---- orbits (true shape and inclination, same projection as the bodies) ----
     for name, pid, au, col, _, period in PLANETS:
@@ -570,14 +562,12 @@ def main():
 
     def label_style(name):
         sym = SYMBOLS.get(name)
-        if isinstance(sym, tuple):
-            return sym[0], sym[1], SYM_SIZE
-        return (sym, GLYPHS, SYM_SIZE) if sym else (name, FONT, 13)
+        return (sym, None, SYM_SIZE) if sym else (name, FONT, 13)
 
     def label_width(name):
         s, font, px = label_style(name)
-        if s in _DRAWN:
-            return drawn_symbol(cr, s, 0, 0, px * TEXT_K, None, 0, measure=True)
+        if font is None:
+            return symbol(cr, s, 0, 0, px * TEXT_K, None, 0, measure=True)
         cr.select_font_face(font, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         cr.set_font_size(px * TEXT_K)
         return cr.text_extents(s).x_advance
@@ -585,7 +575,7 @@ def main():
     labels = []                                     # (name, x, y, align), drawn last
     for depth, name, x, y, bx, by, col, size in bodies:
         if name == "Sun":
-            sphere(cr, x, y, size, col, glow=1.6)
+            sun_sphere(cr, x, y, size)
             continue
         if name in NODES:                           # small diamond on the band's inner edge
             cr.move_to(x, y - size * 1.3); cr.line_to(x + size, y)
@@ -611,7 +601,10 @@ def main():
         elif name == "GA":
             sphere(cr, x, y, size, col, glow=2.2)
         else:
-            sphere(cr, x, y, size, col, glow=0.8 if name in ("Jupiter", "Uranus", "Neptune") else 0)
+            # direction to the Sun: screen x, depth (towards the back) and height
+            light = (CX - x, -depth, -(by - y))
+            lit_sphere(cr, x, y, size, col, light,
+                       glow=0.8 if name in ("Jupiter", "Uranus", "Neptune") else 0)
         if name == "Saturn":                        # ring in front of the globe
             cr.save(); cr.translate(x, y); cr.rotate(-0.35); cr.scale(2.2, 0.55)
             cr.arc(0, 0, size, 0, math.pi); cr.restore()
@@ -661,8 +654,8 @@ def main():
         placed.append(box)
         x0, y = box[0], box[3] - line * 0.2
         s, font, px = label_style(name)
-        if s in _DRAWN:
-            drawn_symbol(cr, s, x0, y, px * TEXT_K, (0.92, 0.94, 1.0), 0.9)
+        if font is None:
+            symbol(cr, s, x0, y, px * TEXT_K, (0.92, 0.94, 1.0), 0.9)
         else:
             text(cr, s, x0, y, px, (0.92, 0.94, 1.0), 0.9, font)
 
@@ -719,7 +712,8 @@ def main():
 
     def cell_width(c, i, size):
         if i == 3:                                   # glyph + gap + degrees
-            return width(c[0], size + 1, GLYPHS) + 6 * k + width(c[1:], size, MONO)
+            return (max(symbol(cr, key, 0, 0, (size + 1) * k, None, 0, measure=True)
+                        for key in SIGN_KEYS.values()) + 6 * k + width(c[1:], size, MONO))
         return width(c, size, MONO)
 
     def measure():
@@ -766,7 +760,7 @@ def main():
             dim = cells[i] == "—"
             text(cr, cells[i], xs[i][1], rowy, 14, font=MONO, align="r", alpha=0.5 if dim else 0.85, k=k)
         sx0, sx1 = xs[3]
-        text(cr, cells[3][0], sx0, rowy, 15, gold if name == "Earth" else pale, font=GLYPHS, k=k)
+        symbol(cr, SIGN_KEYS[cells[3][0]], sx0, rowy, 15 * k, gold if name == "Earth" else pale, 0.85)
         text(cr, cells[3][1:], sx1, rowy, 14, font=MONO, align="r", k=k)
         rowy += 25 * k
 
