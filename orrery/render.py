@@ -424,6 +424,11 @@ def main():
     H = canvas_height(TEXT_K, len(order))
     surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, math.ceil(W * scale), math.ceil(H * scale))
     cr = cairo.Context(surf)
+    # exact (unrounded) letter widths, so text is the same size in the Orrery and
+    # the Ephemeris whatever resolution each lays its text out at
+    fo = cairo.FontOptions()
+    fo.set_hint_metrics(cairo.HINT_METRICS_OFF)
+    cr.set_font_options(fo)
     cr.scale(scale, scale)
 
     # faint stars (fixed pattern, so they do not flicker between frames)

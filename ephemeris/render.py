@@ -499,6 +499,11 @@ def main():
     # wrapped summary. Then replay it, scaled, onto the PNG.
     rec = cairo.RecordingSurface(cairo.CONTENT_COLOR_ALPHA, None)
     cr = cairo.Context(rec)
+    # exact (unrounded) letter widths, so text is the same size in the Orrery and
+    # the Ephemeris whatever resolution each lays its text out at
+    fo = cairo.FontOptions()
+    fo.set_hint_metrics(cairo.HINT_METRICS_OFF)
+    cr.set_font_options(fo)
     k = K
     px = 14 * k
     loc = time.localtime(now)

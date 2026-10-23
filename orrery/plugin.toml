@@ -4,7 +4,7 @@
 
 id = "traditions/orrery"
 name = "Orrery"
-version = "1.7.0"
+version = "1.7.1"
 plugin_api = 24
 author = "Traditions"
 license = "AGPL-3.0-or-later"
