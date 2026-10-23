@@ -85,6 +85,10 @@ SYMBOLS = {"Moon": "moon", "Mercury": "mercury", "Venus": "venus", "Earth": "ear
            "Mars": "mars", "Jupiter": "jupiter", "Saturn": "saturn", "Chiron": "chiron",
            "Uranus": "uranus", "Neptune": "neptune", "Pluto": "pluto",
            "North Node": "north-node", "South Node": "south-node"}
+# Table Object column: the same symbols plus the Sun; GC and GA keep their names.
+TABLE_SYMBOLS = dict(SYMBOLS, Sun="sun")
+TABLE_SYM_PX = 18                    # symbol size in the table (text is 14)
+TABLE_SYM_K = {"north-node": 0.82, "south-node": 0.82}   # the nodes look big
 
 # The Moon's nodes (true node, geocentric) are marked on the inner edge of the
 # zodiac band at their longitude, like the galactic center.
@@ -712,8 +716,11 @@ def main():
 
     def cell_width(c, i, size):
         if i == 3:                                   # glyph + gap + degrees
-            return (max(symbol(cr, key, 0, 0, (size + 1) * k, None, 0, measure=True)
+            return (max(symbol(cr, key, 0, 0, (TABLE_SYM_PX - 1) * k, None, 0, measure=True)
                         for key in SIGN_KEYS.values()) + 6 * k + width(c[1:], size, MONO))
+        if i == 0 and c in TABLE_SYMBOLS:
+            key = TABLE_SYMBOLS[c]
+            return symbol(cr, key, 0, 0, TABLE_SYM_PX * TABLE_SYM_K.get(key, 1) * k, None, 0, measure=True)
         return width(c, size, MONO)
 
     def measure():
@@ -755,12 +762,16 @@ def main():
             cr.set_source_rgba(*col, 0.95)
             cr.arc(x0 + 8 * k, rowy - 5 * k, 4.5 * k, 0, 2 * math.pi)
             cr.fill()
-        text(cr, cells[0], x0 + dot, rowy, 14, font=MONO, k=k)
+        if name in TABLE_SYMBOLS:
+            key = TABLE_SYMBOLS[name]
+            symbol(cr, key, x0 + dot, rowy, TABLE_SYM_PX * TABLE_SYM_K.get(key, 1) * k, pale, 0.9)
+        else:
+            text(cr, cells[0], x0 + dot, rowy, 14, font=MONO, k=k)
         for i in (1, 2, 4, 5, 6):
             dim = cells[i] == "—"
             text(cr, cells[i], xs[i][1], rowy, 14, font=MONO, align="r", alpha=0.5 if dim else 0.85, k=k)
         sx0, sx1 = xs[3]
-        symbol(cr, SIGN_KEYS[cells[3][0]], sx0, rowy, 15 * k, gold if name == "Earth" else pale, 0.85)
+        symbol(cr, SIGN_KEYS[cells[3][0]], sx0, rowy, (TABLE_SYM_PX - 1) * k, gold if name == "Earth" else pale, 0.85)
         text(cr, cells[3][1:], sx1, rowy, 14, font=MONO, align="r", k=k)
         rowy += 25 * k
 

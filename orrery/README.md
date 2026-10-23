@@ -50,7 +50,7 @@ in the body's colour.
 
 | Column   | Meaning |
 |----------|---------|
-| Object   | name |
+| Object   | the body's astrological symbol; GC and GA by name |
 | Lon λ    | ecliptic longitude: heliocentric for the planets (tropical, of date); for the Sun, the nodes, GC and GA, as seen from Earth |
 | Lat β    | ecliptic latitude (0° for the nodes) |
 | Sign     | sign and degree of that longitude, tropical or sidereal (see *Zodiac*); Earth's sign is in gold |
