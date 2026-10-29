@@ -23,6 +23,8 @@ positions.
   **Great Attractor** on the ring, each one can be switched off
 - A table with longitude, latitude, sign, distance from the Sun and from
   Earth, and light travel time, in heliocentric or geocentric order
+- Its own planet and sign symbols (shared with the Ephemeris), with adjustable
+  sizes that match between the two widgets
 
 [Full description and settings →](orrery/README.md)
 
@@ -39,6 +41,8 @@ Today's sidereal positions for astrologers.
 - A short **summary** of the highlights: dignities, stations, last or first
   degrees and coming sign changes (the Moon's with the time)
 - Heliocentric or geocentric (Ptolemaic) planet order
+- **Any day:** buttons to step a day back or forward, or click the date to
+  type any date and time
 
 [Full description and settings →](ephemeris/README.md)
 
@@ -46,14 +50,15 @@ Today's sidereal positions for astrologers.
 
 - Noctalia v5 (plugin API 24)
 - `python3` with **pycairo** and **pyswisseph**
-- Fonts: DejaVu Sans and Noto Sans Symbols
+- Font: DejaVu Sans (the symbols are drawn by the widgets and need no font)
 - For Ephemeris's Sanskrit names only: **PyGObject** and Noto Sans Devanagari
 
 Arch Linux (and Arch-based distributions):
 
 ```sh
-sudo pacman -S python-cairo python-gobject ttf-dejavu noto-fonts
-paru -S pyswisseph               # AUR (or yay)
+sudo pacman -S python-cairo ttf-dejavu
+sudo pacman -S python-gobject noto-fonts   # only for Ephemeris's Sanskrit names
+paru -S pyswisseph                         # AUR (or yay)
 ```
 
 Without the AUR, each widget can use a private Python environment instead;

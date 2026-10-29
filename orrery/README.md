@@ -26,11 +26,12 @@ positions are computed locally with the Swiss Ephemeris.
 | **Galactic center (GC)** | the centre of the Milky Way (Sgr A\*), a black ball with a faint halo on the ring at its longitude; it is far beyond any scale, so it sits on the ring |
 | **Great Attractor (GA)** | the gravitational centre of our supercluster (Laniakea), a white glowing ball on the ring, like the GC |
 | **Zodiac label** | top left: **Sidereal: Fagan/Bradley** or **Tropical** |
-| **Date and time** | top right |
+| **Date and time** | top right, as `DD.MM.YYYY HH:MM` |
 
 All astrological symbols (planets, nodes and signs) are the widget's own
 vector outlines from `symbols.json`, so they look the same whatever fonts are
-installed. Every label is placed in the nearest free spot around
+installed; their size in the table is set with *Sign size* and *Planet
+size*. Every label is placed in the nearest free spot around
 its body, clear of other bodies, labels and the sign symbols.
 
 The planets are shaded as spheres lit from the Sun's real direction in 3D, so

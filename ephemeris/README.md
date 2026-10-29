@@ -42,17 +42,35 @@ window, which is why one program can show *Rx* where another shows *SD*.
 Neptune and Pluto rule Aquarius, Pisces and Scorpio and have no exaltation.
 Detriment and fall are the signs opposite.
 
-### Other days and times
+All planet and sign symbols are the widget's own vector outlines from
+`symbols.json`, the same as in the Orrery, so they look the same whatever
+fonts are installed. Their size is set with *Sign size* and *Planet size*.
 
-The buttons under the date step one day back or forward, or return to now.
-Click the date to type a date and time (`DD.MM.YYYY HH:MM`, or a date alone to
-keep the shown time); Enter shows it on the widget.
+### Date and other days
+
+The date and time are in the top right corner, as `DD.MM.YYYY HH:MM`.
+Under it are three buttons:
+
+| Button | Does |
+|--------|------|
+| ◀ | one day back |
+| 🗓 | back to now |
+| ▶ | one day forward |
+
+**Click the date** to type any date and time in a small pop-up:
+`DD.MM.YYYY HH:MM`, or just `DD.MM.YYYY` to keep the time shown. Press Enter
+to show it. Every part of the widget (table, dignities, summary) then follows
+that moment.
+
+While it shows another moment than now, the date is **red** and the widget
+stays on that moment instead of ticking on; press 🗓 to go back to now.
 
 ### The ayanamsa line
 
 In the top left corner, beside the date: the current values of both
-ayanamsas (for example "Fagan/Bradley 25°06′, Lahiri 24°13′"), and which one
-the dignities and the summary use.
+ayanamsas, and which one the dignities and the summary use, for example
+"Ayanamsa: Fagan/Bradley 25°06', Lahiri 24°13'. Nakshatras by Lahiri;
+dignities and highlights by Fagan/Bradley."
 
 ### The summary
 
@@ -91,15 +109,15 @@ read at the same size. The pada numbers stay as they are.
 
 - Noctalia v5 (plugin API 24)
 - `python3` with **pycairo** and **pyswisseph** (Swiss Ephemeris)
-- Font: DejaVu Sans (sign and planet symbols; Saturn, Jupiter and Pluto are
-  drawn by the widget) and Noto Sans Symbols (🜨)
+- Font: DejaVu Sans as a fallback for the text (the symbols are drawn by the
+  widget and need no font)
 - Only for Sanskrit names: **PyGObject** (Pango) and **Noto Sans Devanagari**
 
 Arch Linux (and Arch-based distributions):
 
 ```sh
-sudo pacman -S python-cairo ttf-dejavu noto-fonts
-sudo pacman -S python-gobject              # only for Sanskrit names
+sudo pacman -S python-cairo ttf-dejavu
+sudo pacman -S python-gobject noto-fonts   # only for Sanskrit names
 paru -S pyswisseph                         # AUR (or yay)
 ```
 
@@ -165,7 +183,9 @@ You can place several Ephemeris widgets; each has its own settings.
   and `noto-fonts` (Noto Sans Devanagari).
 - **A new setting does not appear after an update:** disable and enable the
   plugin (`noctalia msg plugins disable traditions/ephemeris`, then `enable`).
-- **Another moment:** `EPHEMERIS_TIME=<unix time> python3 render.py out.png`.
+- **Another moment:** use the day buttons or click the date (see *Date and
+  other days*); from a terminal, `EPHEMERIS_TIME=<unix time> python3 render.py out.png`.
+- **The widget is stuck on an old date (in red):** press 🗓 to go back to now.
 
 ## License
 
