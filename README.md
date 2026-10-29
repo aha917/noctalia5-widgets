@@ -4,8 +4,8 @@ Astronomy and astrology desktop widgets for [Noctalia](https://github.com/noctal
 Both compute everything locally with the Swiss Ephemeris and redraw themselves every minute.
 
 <p>
-  <img src="orrery/preview.png" alt="Orrery" width="49%">
-  <img src="ephemeris/preview.png" alt="Ephemeris" width="42%">
+  <img src="orrery/preview.png" alt="Orrery" width="47%">
+  <img src="ephemeris/preview.png" alt="Ephemeris" width="48.6%">
 </p>
 
 ## The widgets
