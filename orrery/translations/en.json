@@ -20,6 +20,14 @@
       "label": "Font size",
       "description": "Size of the body text in px; headings scale along."
     },
+    "sign_size": {
+      "label": "Sign size",
+      "description": "Size of the zodiac sign symbols in the table's Sign column, in px (31 is the old look at font size 20)."
+    },
+    "planet_size": {
+      "label": "Planet size",
+      "description": "Size of the planet symbols in the table's Object column, in px (32 is the old look at font size 20)."
+    },
     "zodiac": {
       "label": "Zodiac",
       "description": "Where the signs on the ring and in the Sign column start: the equinox (tropical) or the stars (sidereal, Fagan/Bradley ayanamsa).",

@@ -42,6 +42,12 @@ window, which is why one program can show *Rx* where another shows *SD*.
 Neptune and Pluto rule Aquarius, Pisces and Scorpio and have no exaltation.
 Detriment and fall are the signs opposite.
 
+### Other days and times
+
+The buttons under the date step one day back or forward, or return to now.
+Click the date to type a date and time (`DD.MM.YYYY HH:MM`, or a date alone to
+keep the shown time); Enter shows it on the widget.
+
 ### The ayanamsa line
 
 In the top left corner, beside the date: the current values of both
@@ -146,6 +152,8 @@ You can place several Ephemeris widgets; each has its own settings.
 | Font size | 20 | 8–26; the table shrinks if it would not fit the width |
 | Sanskrit names | off | nakshatras and the Lahiri/Nakshatra headings in Devanagari |
 | Planet order | Heliocentric | Heliocentric: ☉ ☿ ♀ 🜨 ☽ ♂ ♃ ♄ ♅ ♆ ⯓ (by distance from the Sun, as in Orrery). Geocentric: 🜨 ☽ ☿ ♀ ☉ ♂ ♃ ♄ ♅ ♆ ⯓ (the Ptolemaic order) |
+| Sign size | 31 | 8–60 px; the zodiac symbols in the table and the summary (31 matches the Orrery's Sign column) |
+| Planet size | 32 | 8–60 px; the planet symbols in the table and the summary |
 
 ## Troubleshooting
 

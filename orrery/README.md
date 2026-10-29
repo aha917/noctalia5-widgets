@@ -153,6 +153,8 @@ its own settings.
 | Show: Moon's nodes | on | ☊ ☋ on the ring and in the table |
 | Show: zodiac label | on | "Tropical" / "Sidereal: Fagan/Bradley" in the top left corner |
 | Zodiac label size | 20 | appears only while the label is on; the same number as Font size matches the date |
+| Sign size | 31 | 8–40 px; the zodiac symbols in the table's Sign column (the same number gives the same size as in the Ephemeris) |
+| Planet size | 32 | 8–40 px; the symbols in the table's Object column |
 
 Hidden elements also leave the table, and the widget gets shorter.
 

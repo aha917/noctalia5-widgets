@@ -18,6 +18,8 @@ local zodiacLabel = noctalia.getConfig("zodiac_label")
 if zodiacLabel == nil then zodiacLabel = true end
 local zodiacSize = noctalia.getConfig("zodiac_font_size") or 20
 local order = noctalia.getConfig("order") or "heliocentric"
+local signSize = noctalia.getConfig("sign_size") or 31
+local planetSize = noctalia.getConfig("planet_size") or 32
 local function on(key)                      -- bool settings that default to true
   local v = noctalia.getConfig(key)
   return v == nil or v == true
@@ -73,7 +75,8 @@ local function redraw()
   local scale = string.format("%.3f", 2 * size / W)
   noctalia.runAsync({ python, "-I", dir .. "/render.py", out, scale, font, tableFont, tostring(fontSize), zodiac,
     zodiacLabel and "1" or "0", tostring(zodiacSize), order,
-    showGC and "1" or "0", showGA and "1" or "0", showNodes and "1" or "0" }, function(result)
+    showGC and "1" or "0", showGA and "1" or "0", showNodes and "1" or "0",
+    tostring(signSize), tostring(planetSize) }, function(result)
     busy = false
     if result.exitCode == 0 then
       shown = out

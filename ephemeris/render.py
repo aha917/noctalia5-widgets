@@ -14,6 +14,8 @@ Lahiri, as is the Vedic custom. Dignities, motion and the summary follow the
 primary ayanamsa (default Fagan/Bradley). EPHEMERIS_TIME=<unix time> renders
 another moment.
 """
+import hashlib
+import json
 import math
 import os
 import random
@@ -354,18 +356,99 @@ EARTH = "🜨"                     # opposite the Sun: Earth as seen from the Su
 SYMBOL_FONT[EARTH] = "Noto Sans Symbols"
 
 
+# The hand-made symbols shared with the Orrery: filled outlines from
+# symbols.json (a 100-unit box, y down, each symbol centred in it); every op
+# is M/L/C with absolute coordinates, or Z. Same drawing as the Orrery.
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "symbols.json")) as _f:
+    _SYMS = json.load(_f)
+SYM_SCALE = {"earth": 0.86, "moon": 0.9, "uranus": 0.8, "neptune": 1.08, "venus": 1.08, "mercury": 1.08, "saturn": 1.02}    # some look heavy or light at full size
+SYM_KEY = dict(zip("☉☽☿♀♂♃♄♅♆⯓", ["sun", "moon", "mercury", "venus", "mars", "jupiter",
+                                       "saturn", "uranus", "neptune", "pluto"]))
+SYM_KEY[EARTH] = "earth"
+SYM_KEY.update(zip(SIGNS, ["aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra",
+                           "scorpio", "sagittarius", "capricorn", "aquarius", "pisces"]))
+
+
+def _sym_path(cr, key):
+    for op in _SYMS[key]["ops"]:
+        if op[0] == "C":
+            cr.curve_to(*op[1:])
+        elif op[0] == "L":
+            cr.line_to(*op[1:])
+        elif op[0] == "M":
+            cr.move_to(*op[1:])
+        else:
+            cr.close_path()
+
+
+def _sym_extents(key):
+    c = cairo.Context(cairo.RecordingSurface(cairo.CONTENT_ALPHA, None))
+    _sym_path(c, key)
+    x0, y0, x1, y1 = c.fill_extents()
+    m = _SYMS[key].get("stroke", 0) / 2       # the stroke widens the outline
+    return x0 - m, y0 - m, x1 + m, y1 + m
+
+
+_SYM_EXT = {key: _sym_extents(key) for key in _SYMS}
+
+
+def own_symbol(cr, key, x, y, px, col, alpha, measure=False):
+    """Symbol `key` in a px-high box; (x, y) is the baseline start like
+    show_text. Returns the advance."""
+    x0, y0, x1, y1 = _SYM_EXT[key]
+    k = SYM_SCALE.get(key, 1) * px / 100
+    adv = (x1 - x0) * k + 0.11 * px
+    if measure:
+        return adv
+    ox, oy = x + 0.055 * px - x0 * k, y - 0.27 * px - 50 * k
+    rule = cairo.FILL_RULE_EVEN_ODD if _SYMS[key].get("evenodd") else cairo.FILL_RULE_WINDING
+    stroke = _SYMS[key].get("stroke", 0)   # extra line weight, in the 100-unit box
+    for d, c, a in ((1, (0, 0, 0), 0.6 * alpha), (0, col, alpha)):
+        cr.save()
+        cr.translate(ox + d, oy + d)
+        cr.scale(k, k)
+        _sym_path(cr, key)
+        cr.restore()
+        cr.set_fill_rule(rule)
+        cr.set_source_rgba(*c, a)
+        if stroke:                          # thicken every line by tracing the outline too
+            cr.fill_preserve()
+            cr.set_line_width(stroke * k)
+            cr.set_line_join(cairo.LINE_JOIN_ROUND)
+            cr.stroke()
+        else:
+            cr.fill()
+    cr.set_fill_rule(cairo.FILL_RULE_WINDING)
+    return adv
+
+
 def glyph(cr, sym, x, y, px, col=PALE, alpha=0.95, measure=False):
-    """A planet or sign symbol; Saturn, Jupiter and Pluto are drawn outlines."""
+    """A planet or sign symbol, drawn from symbols.json (the same symbols as
+    the Orrery); anything not in it falls back to the font."""
+    if SYM_KEY.get(sym) in _SYMS:
+        return own_symbol(cr, SYM_KEY[sym], x, y, px, col, alpha, measure)
     if sym in _DRAWN:
         return drawn_symbol(cr, sym, x, y, px, col, alpha, measure=measure)
     return text(cr, sym, x, y, px, col, alpha, SYMBOL_FONT.get(sym, GLYPHS), measure)
 
 
+# Sign and planet symbol sizes in px (widget settings "sign_size" and
+# "planet_size"): the height of the symbol box, the same units as the Orrery's
+# settings, so the same number gives the same size in both widgets.
+SIGN_PX = 31.0
+PLANET_PX = 32.0
+
+
 def runs(cr, parts, x, y, px, measure=False):
-    """Draw a list of ("t", text, colour) / ("g", symbol, colour) runs."""
+    """Draw a list of ("t", text, colour) / ("g", planet, colour) /
+    ("s", sign, colour) runs. Symbols scale with px like the text, so they
+    shrink with the table when it would not fit."""
+    rel = px / (14 * K)
     for kind, s, col in parts:
-        if kind == "g":
-            x += glyph(cr, s, x, y, px * 1.2, col, measure=measure)
+        if kind == "s":
+            x += glyph(cr, s, x, y, SIGN_PX * rel, col, measure=measure)
+        elif kind == "g":
+            x += glyph(cr, s, x, y, PLANET_PX * rel, col, measure=measure)
         else:
             x += text(cr, s, x, y, px, col, measure=measure)
     return x
@@ -375,7 +458,7 @@ def wrap(cr, parts, width, px):
     """Split runs into lines no wider than width (breaking text at spaces)."""
     words = []
     for kind, s, col in parts:
-        if kind == "g":
+        if kind in ("g", "s"):
             words.append((kind, s, col))
         else:
             for i, w in enumerate(s.split(" ")):
@@ -387,10 +470,13 @@ def wrap(cr, parts, width, px):
     for w in words:
         trial = line + [w]
         if line and runs(cr, trial, 0, 0, px, measure=True) > width and w[1] != " ":
+            carry = [w]
+            if w[1][0] in ".,;:)" and line[-1][1] != " ":     # keep punctuation with its word
+                carry.insert(0, line.pop())
             while line and line[-1][1] == " ":
                 line.pop()
             lines.append(line)
-            line = [w]
+            line = carry
         elif not (not line and w[1] == " "):
             line = trial
     if line:
@@ -420,7 +506,7 @@ def summary(name, sym, lon, sign, mot, dig, ingress, now, moon_nak):
     deg = lon % 30
     # "☉ in ♍"; retrograde / stationary planets get a prefix: "R♄ in ♓".
     head = [("t", mot, RETRO if mot == "R" else STATION)] if mot else []
-    head += [("g", sym, PALE), ("t", " in ", PALE), ("g", SIGNS[sign], GOLD)]
+    head += [("g", sym, PALE), ("t", " in ", PALE), ("s", SIGNS[sign], GOLD)]
     if moon_nak:
         head.append(("t", f" ({moon_nak})", PALE))
     clauses = []
@@ -447,14 +533,14 @@ def summary(name, sym, lon, sign, mot, dig, ingress, now, moon_nak):
         jd_in, new = ingress
         back = (new - sign) % 12 == 11
         out += [("t", ", and will " + ("move back into " if back else "enter "), PALE),
-                ("g", SIGNS[new], GOLD), ("t", " " + when(jd_in, now, name == "Moon"), PALE)]
+                ("s", SIGNS[new], GOLD), ("t", " " + when(jd_in, now, name == "Moon"), PALE)]
     if not out and not mot:
         return None
     return head + out + [("t", ".", PALE)]
 
 
 def main():
-    global FONT, K
+    global FONT, K, SIGN_PX, PLANET_PX
     out = sys.argv[1]
     scale = float(sys.argv[2]) if len(sys.argv) > 2 else 1.0
     if len(sys.argv) > 3 and sys.argv[3].strip():
@@ -467,9 +553,37 @@ def main():
     sanskrit = len(sys.argv) > 6 and sys.argv[6].strip().lower() in ("1", "true", "yes", "on")
     order = ORDERS["geocentric" if len(sys.argv) > 7 and sys.argv[7].strip().lower().startswith("geo")
                    else "heliocentric"]
+    if len(sys.argv) > 8 and sys.argv[8].strip():
+        SIGN_PX = float(sys.argv[8])
+    if len(sys.argv) > 9 and sys.argv[9].strip():
+        PLANET_PX = float(sys.argv[9])
     fb_sid, la_sid = swe.SIDM_FAGAN_BRADLEY, swe.SIDM_LAHIRI
 
-    now = float(os.environ.get("EPHEMERIS_TIME") or time.time())
+    # argv[10]: the moment to show: unix time, or local "DD.MM.YYYY HH:MM" typed
+    # in the widget's time pop-up; empty: now. argv[13]: whole days to move it
+    # (the widget's day buttons), counted on the local calendar so the clock
+    # time stays the same across summer time changes.
+    when = sys.argv[10].strip() if len(sys.argv) > 10 else ""
+    shift = int(sys.argv[13]) if len(sys.argv) > 13 and sys.argv[13].strip() else 0
+    if not when:
+        now = float(os.environ.get("EPHEMERIS_TIME") or time.time())
+    elif "." in when and ":" in when and " " in when:
+        try:
+            d, hm = when.split()
+            day, month, year = (int(v) for v in d.split("."))
+            hour, minute = (int(v) for v in hm.split(":"))
+            now = time.mktime((year, month, day, hour, minute, 0, 0, 0, -1))
+            if time.localtime(now)[:5] != (year, month, day, hour, minute):
+                raise ValueError
+        except ValueError:
+            sys.exit(f"not a date and time: {when!r} (expected DD.MM.YYYY HH:MM)")
+    else:
+        now = float(when)
+    if shift:
+        lt = time.localtime(now)
+        now = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday + shift, lt.tm_hour, lt.tm_min,
+                           lt.tm_sec, 0, 0, -1))
+    live = abs(now - time.time()) < 120             # showing the present moment
     tm = time.gmtime(now)
     jd = swe.julday(tm.tm_year, tm.tm_mon, tm.tm_mday,
                     tm.tm_hour + tm.tm_min / 60 + tm.tm_sec / 3600)
@@ -508,9 +622,10 @@ def main():
     px = 14 * k
     loc = time.localtime(now)
     y = 16 + 14 * k
-    date_s = time.strftime("%a %d %b %Y  %H:%M", loc)
+    date_s = time.strftime("%d.%m.%Y %H:%M", loc)
     date_w = text(cr, date_s, 0, 0, px, measure=True)
-    text(cr, date_s, W - 16 - date_w, y, px, alpha=0.75)
+    # another day than today's: the date in red (as R and fall), so it is not mistaken for now
+    text(cr, date_s, W - 16 - date_w, y, px, PALE if live else RETRO, alpha=0.75 if live else 0.95)
 
     # ayanamsa values, small, in the top left corner beside the date
     swe.set_sid_mode(fb_sid)
@@ -527,12 +642,19 @@ def main():
         runs(cr, line, 16, ny, 11 * K)
         ny += 16 * K
     y = max(y, ny - 16 * K)
+    cut = y + 9 * K                                 # bottom of the header
+    # The widget's day buttons go under the date, right of the ayanamsa note:
+    # leave them at least NAV_PX (displayed px; the PNG is drawn at 2x) of height.
+    NAV_PX = 26
+    date_x = W - 16 - date_w - 8                    # left edge of the date corner
+    date_y = 16 + 14 * k + 6 * K                    # just under the date
+    cut = max(cut, date_y + NAV_PX * 2 / scale)
 
     heads = ["Planet", "Fagan/Bradley", "लाहिड़ी" if sanskrit else "Lahiri", "Dignity",
              "नक्षत्र" if sanskrit else "Nakshatra"]
 
     def pos_parts(lon, mot):
-        p = [("g", SIGNS[int(lon // 30)], PALE), ("t", " " + dms(lon), PALE)]
+        p = [("s", SIGNS[int(lon // 30)], PALE), ("t", " " + dms(lon), PALE)]
         if mot:
             p.append(("t", " " + mot, RETRO if mot == "R" else STATION))
         return p
@@ -586,6 +708,24 @@ def main():
             y += 24 * K
         y += 4 * K
     height = math.ceil(y + 10 * K)
+    # Keep the tallest height drawn so far (per set of widget settings): the
+    # host centres the widget on its position, so a changing height would move
+    # the top too. The extra space stays at the bottom, under the summary.
+    sig = hashlib.md5(repr((round(scale, 3), FONT, K, primary, sanskrit, order, SIGN_PX, PLANET_PX))
+                      .encode()).hexdigest()[:12]
+    keep = os.path.join(os.path.dirname(os.path.abspath(out)), f"height-{sig}")
+    try:
+        with open(keep) as f:
+            tallest = int(f.read().strip() or 0)
+    except (OSError, ValueError):
+        tallest = 0
+    if height > tallest:
+        try:
+            with open(keep, "w") as f:
+                f.write(str(height))
+        except OSError:
+            pass
+    height = max(height, tallest)
 
     surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, math.ceil(W * scale), math.ceil(height * scale))
     c2 = cairo.Context(surf)
@@ -598,10 +738,34 @@ def main():
     c2.set_source_surface(rec, 0, 0)
     c2.paint()
 
-    tmp = f"{out}.{os.getpid()}.tmp"
-    surf.write_to_png(tmp)
-    os.replace(tmp, out)
+    # argv[11] and argv[12]: with these, the picture is saved in three parts so
+    # the widget can put its day buttons in the space under the date:
+    #   out       the header left of the date corner
+    #   argv[12]  the date corner, above the buttons
+    #   argv[11]  everything below the header
+    def save(img, path):
+        tmp = f"{path}.{os.getpid()}.tmp"
+        img.write_to_png(tmp)
+        os.replace(tmp, path)
+
+    if len(sys.argv) > 12 and sys.argv[12].strip():
+        cut_px, x_px, dy_px = round(cut * scale), round(date_x * scale), round(date_y * scale)
+        full_w = surf.get_width()
+        parts = ((out, 0, 0, x_px, cut_px),
+                 (sys.argv[12].strip(), x_px, 0, full_w - x_px, dy_px),
+                 (sys.argv[11].strip(), 0, cut_px, full_w, surf.get_height() - cut_px))
+        for path, x0, y0, w, h in parts:
+            part = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
+            pc = cairo.Context(part)
+            pc.set_source_surface(surf, -x0, -y0)
+            pc.paint()
+            save(part, path)
+        print(f"cut={cut_px / scale:.3f} datex={x_px / scale:.3f} datey={dy_px / scale:.3f}")
+    else:
+        save(surf, out)
     print(f"height={height}")
+    print(f"time={now:.0f}")
+    print(f"date={date_s}")
 
 
 if __name__ == "__main__":

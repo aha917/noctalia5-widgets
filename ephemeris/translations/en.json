@@ -20,6 +20,14 @@
       "label": "Font size",
       "description": "Size of the body text in px; the table shrinks if it would not fit."
     },
+    "sign_size": {
+      "label": "Sign size",
+      "description": "Size of the zodiac sign symbols in px, in the table and the summary (31 matches the Orrery's Sign column at font size 20)."
+    },
+    "planet_size": {
+      "label": "Planet size",
+      "description": "Size of the planet symbols in px, in the table and the summary."
+    },
     "sanskrit": {
       "label": "Sanskrit names",
       "description": "Show the nakshatras and the Lahiri and Nakshatra column headings in Devanagari (needs Noto Sans Devanagari)."
@@ -32,5 +40,10 @@
         "geocentric": "Geocentric"
       }
     }
+  },
+  "nav": {
+    "prev": "Previous day",
+    "now": "Back to now",
+    "next": "Next day"
   }
 }

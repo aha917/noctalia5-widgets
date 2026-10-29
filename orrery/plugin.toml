@@ -4,7 +4,7 @@
 
 id = "traditions/orrery"
 name = "Orrery"
-version = "1.7.1"
+version = "1.8.0"
 plugin_api = 24
 author = "Traditions"
 license = "AGPL-3.0-or-later"
@@ -57,6 +57,24 @@ entry = "desktop.luau"
   default = 20
   min = 8
   max = 26
+
+  [[desktop_widget.setting]]
+  key = "sign_size"
+  type = "int"
+  label_key = "settings.sign_size.label"
+  description_key = "settings.sign_size.description"
+  default = 31
+  min = 8
+  max = 40
+
+  [[desktop_widget.setting]]
+  key = "planet_size"
+  type = "int"
+  label_key = "settings.planet_size.label"
+  description_key = "settings.planet_size.description"
+  default = 32
+  min = 8
+  max = 40
 
   [[desktop_widget.setting]]
   key = "zodiac"

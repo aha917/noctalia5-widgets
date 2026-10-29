@@ -89,6 +89,11 @@ SYMBOLS = {"Moon": "moon", "Mercury": "mercury", "Venus": "venus", "Earth": "ear
 TABLE_SYMBOLS = dict(SYMBOLS, Sun="sun")
 TABLE_SYM_PX = 18                    # symbol size in the table (text is 14)
 TABLE_SYM_K = {"north-node": 0.82, "south-node": 0.82}   # the nodes look big
+# Table symbol sizes in px (widget settings "sign_size" and "planet_size"), as
+# the drawn symbol box, so the same number looks the same size as in the
+# Ephemeris. None = follow the font size (the old look).
+SIGN_PX = None
+PLANET_PX = None
 
 # The Moon's nodes (true node, geocentric) are marked on the inner edge of the
 # zodiac band at their longitude, like the galactic center.
@@ -274,7 +279,7 @@ def black_sphere(cr, x, y, rad):
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "symbols.json")) as _f:
     _SYMS = json.load(_f)
 SYM_K = 1.25                    # symbol box size, as a fraction of the font size
-SYM_SCALE = {"earth": 0.7, "moon": 0.7, "uranus": 0.8}    # these look heavy at full size
+SYM_SCALE = {"earth": 0.86, "moon": 0.9, "uranus": 0.8, "neptune": 1.08, "venus": 1.08, "mercury": 1.08, "saturn": 1.02}    # some look heavy or light at full size
 
 
 def _sym_path(cr, key):
@@ -292,7 +297,9 @@ def _sym_path(cr, key):
 def _sym_extents(key):
     c = cairo.Context(cairo.RecordingSurface(cairo.CONTENT_ALPHA, None))
     _sym_path(c, key)
-    return c.fill_extents()
+    x0, y0, x1, y1 = c.fill_extents()
+    m = _SYMS[key].get("stroke", 0) / 2       # the stroke widens the outline
+    return x0 - m, y0 - m, x1 + m, y1 + m
 
 
 _SYM_EXT = {key: _sym_extents(key) for key in _SYMS}
@@ -314,6 +321,7 @@ def symbol(cr, key, x, y, px, col, alpha, align="l", measure=False, centre=False
             x -= adv
         ox, oy = x + 0.07 * px - x0 * k, y - 0.34 * px - 50 * k
     rule = cairo.FILL_RULE_EVEN_ODD if _SYMS[key].get("evenodd") else cairo.FILL_RULE_WINDING
+    stroke = _SYMS[key].get("stroke", 0)   # extra line weight, in the 100-unit box
     for d, c, a in ((1, (0, 0, 0), 0.6 * alpha), (0, col, alpha)):
         cr.save()
         cr.translate(ox + d, oy + d)
@@ -322,7 +330,13 @@ def symbol(cr, key, x, y, px, col, alpha, align="l", measure=False, centre=False
         cr.restore()
         cr.set_fill_rule(rule)
         cr.set_source_rgba(*c, a)
-        cr.fill()
+        if stroke:                          # thicken every line by tracing the outline too
+            cr.fill_preserve()
+            cr.set_line_width(stroke * k)
+            cr.set_line_join(cairo.LINE_JOIN_ROUND)
+            cr.stroke()
+        else:
+            cr.fill()
     cr.set_fill_rule(cairo.FILL_RULE_WINDING)
     return adv
 
@@ -393,7 +407,7 @@ def fmt_light(au):
 
 
 def main():
-    global FONT, MONO, TEXT_K
+    global FONT, MONO, TEXT_K, SIGN_PX, PLANET_PX
     out = sys.argv[1]
     scale = float(sys.argv[2]) if len(sys.argv) > 2 else 1.0
     if len(sys.argv) > 3 and sys.argv[3].strip():
@@ -415,6 +429,10 @@ def main():
         hidden.add("GA")
     if not flag(12):
         hidden.update(NODES)
+    if len(sys.argv) > 13 and sys.argv[13].strip():
+        SIGN_PX = float(sys.argv[13])
+    if len(sys.argv) > 14 and sys.argv[14].strip():
+        PLANET_PX = float(sys.argv[14])
     order = [name for name in order if name not in hidden]
     now = float(os.environ.get("ORRERY_TIME") or time.time())
     tm = time.gmtime(now)
@@ -673,7 +691,7 @@ def main():
     loc = time.localtime(now)
     y0 = TABLE_Y
     k = TEXT_K
-    date_w = text(cr, time.strftime("%a %d %b %Y  %H:%M", loc), W - 16, 16 + 14 * k,
+    date_w = text(cr, time.strftime("%d.%m.%Y %H:%M", loc), W - 16, 16 + 14 * k,
                   14, (0.8, 0.84, 0.95), 0.75, align="r")
     if show_zodiac:                                   # size in the same units as "Font size"
         zodiac_s = "Sidereal: Fagan/Bradley" if sidereal else "Tropical"
@@ -719,13 +737,20 @@ def main():
         cr.set_font_size(size * k)
         return cr.text_extents(s).x_advance
 
+    def sign_px():
+        return (SIGN_PX / SYM_K * k / TEXT_K) if SIGN_PX else (TABLE_SYM_PX - 1) * k
+
+    def planet_px(key):
+        base = (PLANET_PX / SYM_K * k / TEXT_K) if PLANET_PX else TABLE_SYM_PX * k
+        return base * TABLE_SYM_K.get(key, 1)
+
     def cell_width(c, i, size):
         if i == 3:                                   # glyph + gap + degrees
-            return (max(symbol(cr, key, 0, 0, (TABLE_SYM_PX - 1) * k, None, 0, measure=True)
+            return (max(symbol(cr, key, 0, 0, sign_px(), None, 0, measure=True)
                         for key in SIGN_KEYS.values()) + 6 * k + width(c[1:], size, MONO))
         if i == 0 and c in TABLE_SYMBOLS:
             key = TABLE_SYMBOLS[c]
-            return symbol(cr, key, 0, 0, TABLE_SYM_PX * TABLE_SYM_K.get(key, 1) * k, None, 0, measure=True)
+            return symbol(cr, key, 0, 0, planet_px(key), None, 0, measure=True)
         return width(c, size, MONO)
 
     def measure():
@@ -769,14 +794,14 @@ def main():
             cr.fill()
         if name in TABLE_SYMBOLS:
             key = TABLE_SYMBOLS[name]
-            symbol(cr, key, x0 + dot, rowy, TABLE_SYM_PX * TABLE_SYM_K.get(key, 1) * k, pale, 0.9)
+            symbol(cr, key, x0 + dot, rowy, planet_px(key), pale, 0.9)
         else:
             text(cr, cells[0], x0 + dot, rowy, 14, font=MONO, k=k)
         for i in (1, 2, 4, 5, 6):
             dim = cells[i] == "—"
             text(cr, cells[i], xs[i][1], rowy, 14, font=MONO, align="r", alpha=0.5 if dim else 0.85, k=k)
         sx0, sx1 = xs[3]
-        symbol(cr, SIGN_KEYS[cells[3][0]], sx0, rowy, (TABLE_SYM_PX - 1) * k, gold if name == "Earth" else pale, 0.85)
+        symbol(cr, SIGN_KEYS[cells[3][0]], sx0, rowy, sign_px(), gold if name == "Earth" else pale, 0.85)
         text(cr, cells[3][1:], sx1, rowy, 14, font=MONO, align="r", k=k)
         rowy += 25 * k
 
