@@ -1,8 +1,7 @@
 # Noctalia 5 widgets
 
 Astronomy and astrology desktop widgets for [Noctalia](https://github.com/noctalia-dev) v5.
-Both compute everything locally with the Swiss Ephemeris (no internet needed)
-and redraw themselves every minute.
+Both compute everything locally with the Swiss Ephemeris and redraw themselves every minute.
 
 <p>
   <img src="orrery/preview.png" alt="Orrery" width="49%">
